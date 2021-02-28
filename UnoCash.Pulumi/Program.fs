@@ -1,23 +1,23 @@
 ﻿module Program
 
+open Pulumi.Azure.AppService
 open Pulumi.FSharp.Azure.ApiManagement.Inputs
 open Pulumi.FSharp.Azure.AppService.Inputs
 open Pulumi.FSharp.AzureStorageSasToken
 open Pulumi.FSharp.Azure.ApiManagement
+open Microsoft.AspNetCore.StaticFiles
 open Pulumi.FSharp.Azure.AppInsights
 open Pulumi.FSharp.Azure.AppService
 open Pulumi.FSharp.AzureAD.Inputs
 open Pulumi.FSharp.Azure.Storage
 open System.Collections.Generic
 open Pulumi.FSharp.Azure.Core
-open System.Threading.Tasks
 open Pulumi.FSharp.AzureAD
 open Pulumi.FSharp.Output
 open Pulumi.FSharp.Config
 open Pulumi.FSharp.Assets
 open System.Diagnostics
 open System.Threading
-open Pulumi.AzureAD
 open Pulumi.FSharp
 open System.IO
 open System
@@ -27,6 +27,10 @@ type ParsedSasToken =
     | Valid of string * DateTime
     | ExpiredOrInvalid
     | Missing
+
+// Local backend folder to be created by FAKE
+// Fake to invoke Pulumi?
+// Create empty sample stacks to upload in Git
 
 let infra() =
     let group =
@@ -92,7 +96,6 @@ let infra() =
     let apiManagement =
         service {
             name           "unocashapim"
-            resourceName   config.["ApimName"]
             resourceGroup  group.Name
             publisherEmail "info@uno.cash"
             publisherName  "UnoSD"
@@ -101,46 +104,11 @@ let infra() =
             serviceIdentity {
                 resourceType "SystemAssigned"
             }
-            
-            serviceHostnameConfiguration {
-                proxies [
-                    serviceHostnameConfigurationProxy {
-                        defaultSslBinding true
-                        hostName          config.["CustomDomain"]
-                        keyVaultId        config.["KeyVaultCertSecretId"]
-                    }
-                ]
-            }
         }
         
     let stackOutputs =
         StackReference(Deployment.Instance.StackName).Outputs
-      
-    // This takes 11 minutes in Pulumi just to fail because we provider both AccountKey and CreateAccount(true)
-    // it's not really usable, try and debug what's going on.  
-    //let certificate =
-    //    LetsEncryptCertificate("unocashcert",
-    //                           LetsEncryptCertificateArgs(Dns = input config.["CustomDomain"],
-    //                                                      AccountKey = io secret.["LetsEncryptAccountKey"],
-    //                                                      CreateAccount = input true,
-    //                                                      Email = input config.["LetsEncryptEmail"]))
-    
-    customDomain {
-        name            "unocashapimcd"
-        apiManagementId apiManagement.Id
-        
-        proxies [
-            customDomainProxy {
-                hostName (apiManagement.GatewayUrl |> Output.map (fun x -> Uri(x).Host))
-            }
-            
-            customDomainProxy {
-                hostName   config.["CustomDomain"]
-                keyVaultId config.["KeyVaultCertSecretId"]
-            }
-        ]
-    }
-    
+
     logger {
         name              "unocashapimlog"
         apiManagementName apiManagement.Name
@@ -171,58 +139,6 @@ let infra() =
             path                 ""
             revision             "1"
             subscriptionRequired false
-        }
-
-    let spaAdApplication =
-        application {
-            name                    "unocashspaaadapp"
-            displayName             "unocashspaaadapp"
-            oauth2AllowImplicitFlow true
-            groupMembershipClaims   "None"
-            
-            replyUrls               [
-                config.["WebEndpoint"]
-                "https://jwt.ms"
-                "http://localhost:8080"
-            ]            
-            
-            applicationOptionalClaims {
-                idTokens [
-                    applicationOptionalClaimsIdToken {
-                        name                 "upn"
-                        additionalProperties "include_externally_authenticated_upn"
-                        essential            true
-                    }
-                ]
-            }
-        }
-    
-    let policyBlobUrlWithSas pulumiName policyXml =
-        let blob =
-            blob {
-                name                 ("unocash" + pulumiName + "policyblob")
-                storageAccountName   storage.Name
-                storageContainerName buildContainer.Name
-                source               { Text = policyXml }.ToPulumiType
-                resourceType         "Block"
-            }
-    
-        secretOutput {
-            let! url =
-                blob.Url
-
-            let! sas =
-                sasToken {
-                    account    storage
-                    container  buildContainer
-                    duration   {
-                        From = DateTime.Now
-                        To   = DateTime.Now.AddHours(1.)
-                    }
-                    permission Read
-                }
-
-            return url + sas
         }
         
     let sasExpirationOutputName = "SasTokenExpiration"
@@ -262,10 +178,12 @@ let infra() =
                  | Valid (sasToken, e ) -> output { return sasToken, e }
         }
     
-    let swApiPolicyBlobLink =
+    let swApiPolicyXml =
         output {
             let! (tokenValue, _) =
                 token
+                
+            let! url = apiManagement.GatewayUrl
                 
             let apiPolicyXml =
                 let queryString =
@@ -275,79 +193,134 @@ let infra() =
                     Map.ofArray
                 
                 String.Format(File.ReadAllText("StaticWebsiteApimApiPolicy.xml"), [|
-                    yield config.["WebEndpoint"] :> obj
+                    yield url :> obj
                     
                     yield! ["sv";"sr";"st";"se";"sp";"spr";"sig"] |> List.map (fun x -> (Map.find x queryString) |> box)
                 |])
 
-            return! policyBlobUrlWithSas "mainapi" apiPolicyXml
+            return apiPolicyXml
+        }
+        
+    apiPolicy {
+        name              "unocashapimapipolicy"
+        apiManagementName swApi.ApiManagementName
+        apiName           swApi.Name
+        resourceGroup     swApi.ResourceGroupName
+        xmlContent        swApiPolicyXml
+    }
+
+    let spaAdApplication =
+        application {
+            name                    "unocashspaaadapp"
+            displayName             "unocashspaaadapp"
+            oauth2AllowImplicitFlow true
+            groupMembershipClaims   "None"
+            
+            replyUrls [
+                io    apiManagement.GatewayUrl
+                input "https://jwt.ms"
+                input "http://localhost:8080"
+            ]            
+            
+            applicationOptionalClaims {
+                idTokens [
+                    applicationOptionalClaimsIdToken {
+                        name                 "upn"
+                        additionalProperties "include_externally_authenticated_upn"
+                        essential            true
+                    }
+                ]
+            }
         }
     
-    apiOperation {
-        name              "unocashapimindexoperation"
-        resourceGroup     group.Name
-        apiManagementName apiManagement.Name
-        apiName           swApi.Name
-        method            "GET"
-        operationId       "get-index"
-        urlTemplate       "/"
-        displayName       "GET index"
-    }
-        
-    apiOperation {
-        name              "unocashapimoperation"
-        resourceGroup     group.Name
-        apiManagementName apiManagement.Name
-        apiName           swApi.Name
-        method            "GET"
-        operationId       "get"
-        urlTemplate       "/*"     
-        displayName       "GET"
-    }
-    
-    let blobLink name fileName =
+    let policyFromFile fileName =
         output {
             let! appId =
                 spaAdApplication.ApplicationId
             
+            let! config =
+                AzureAD.GetClientConfig.InvokeAsync()
+            
             let policy =
                 String.Format(File.ReadAllText(fileName),
-                              Config.TenantId,
+                              config.TenantId,
                               appId)
             
-            return! policyBlobUrlWithSas name policy
+            return policy
         }
+    
+    let getIndexOperation =
+        apiOperation {
+            name              "unocashapimindexoperation"
+            resourceGroup     group.Name
+            apiManagementName apiManagement.Name
+            apiName           swApi.Name
+            method            "GET"
+            operationId       "get-index"
+            urlTemplate       "/"
+            displayName       "GET index"
+        }
+    
+    apiOperationPolicy {
+        name              "unocashapimindexoperationpolicy"
+        operationId       getIndexOperation.OperationId
+        apiManagementName getIndexOperation.ApiManagementName
+        apiName           getIndexOperation.ApiName
+        resourceGroup     getIndexOperation.ResourceGroupName
+        xmlContent        (policyFromFile "StaticWebsiteApimGetIndexOperationPolicy.xml")
+    }
         
-    let functionApiPolicyBlobLink =
-        blobLink "functionapi" "APIApimApiPolicy.xml"
+    (* TODO: Small CE: apiOperationWithPolicyFromXmlFile { ... } *)
+    let getOperation =
+        apiOperation {
+            name              "unocashapimgetoperation"
+            resourceGroup     group.Name
+            apiManagementName apiManagement.Name
+            apiName           swApi.Name
+            method            "GET"
+            operationId       "get"
+            urlTemplate       "/*"     
+            displayName       "GET"
+        }
     
-    let swApiGetIndexPolicyBlobLink =
-        blobLink "getindex" "StaticWebsiteApimGetIndexOperationPolicy.xml"
+    apiOperationPolicy {
+        name              "unocashapimgetoperationpolicy"
+        operationId       getOperation.OperationId
+        apiManagementName getOperation.ApiManagementName
+        apiName           getOperation.ApiName
+        resourceGroup     getOperation.ResourceGroupName
+        xmlContent        (policyFromFile "StaticWebsiteApimGetOperationPolicy.xml")
+    }
     
-    let swApiGetPolicyBlobLink =
-        blobLink "get" "StaticWebsiteApimGetOperationPolicy.xml"
+    let postOperation =
+        apiOperation {
+            name              "unocashapimpostoperation"
+            resourceGroup     group.Name
+            apiManagementName apiManagement.Name
+            apiName           swApi.Name
+            method            "POST"
+            operationId       "post-aad-token"
+            urlTemplate       "/"
+            displayName       "POST AAD token"
+        }
     
-    let swApiPostPolicyBlobLink =
-        blobLink "post" "StaticWebsiteApimPostOperationPolicy.xml"
-    
-    apiOperation {
-        name              "unocashapimpostoperation"
-        resourceGroup     group.Name
-        apiManagementName apiManagement.Name
-        apiName           swApi.Name
-        method            "POST"
-        operationId       "post-aad-token"
-        urlTemplate       "/"
-        displayName       "POST AAD token"
+    apiOperationPolicy {
+        name              "unocashapimpostoperationpolicy"
+        operationId       postOperation.OperationId
+        apiManagementName postOperation.ApiManagementName
+        apiName           postOperation.ApiName
+        resourceGroup     postOperation.ResourceGroupName
+        xmlContent        (policyFromFile "StaticWebsiteApimPostOperationPolicy.xml")
     }
     
     let app =
         functionApp {
-            name               "unocashapp"
-            version            "~3"
-            resourceGroup      group.Name
-            appServicePlanId   functionPlan.Id
-            storageAccountName storage.Name
+            name                    "unocashapp"
+            version                 "~3"
+            resourceGroup           group.Name
+            appServicePlanId        functionPlan.Id
+            storageAccountName      storage.Name
+            storageAccountAccessKey storage.PrimaryAccessKey
             
             appSettings     [
                 "runtime"                        , input "dotnet"
@@ -381,6 +354,45 @@ let infra() =
             subscriptionRequired false
         }
     
+    // TODO: Also "get" methods
+    let masterKey =
+        output {
+            let! functionAppName = app.Name
+            let! resourceGroupName = app.ResourceGroupName
+            
+            let! res = GetFunctionAppHostKeys.InvokeAsync(GetFunctionAppHostKeysArgs(Name = functionAppName,
+                                                                                     ResourceGroupName = resourceGroupName))
+            
+            return res.MasterKey
+        }    
+    
+    let nv =
+        namedValue {
+            name              "unocashapimnvfk"
+            displayName       "FunctionKey"
+            apiManagementName apiManagement.Name
+            resourceGroup     apiManagement.ResourceGroupName
+            secret            true
+            value             masterKey
+        }
+    
+    
+    // TODO: Fix this, we should pass the key name instead of creating this fake dependency
+    output {
+        let! _ = nv.DisplayName
+            
+        apiPolicy {
+            name              "unocashapimapifunctionpolicy"
+            apiName           apiFunction.Name
+            apiManagementName apiFunction.ApiManagementName
+            resourceGroup     apiFunction.ResourceGroupName
+            xmlContent        (policyFromFile "APIApimApiPolicy.xml")           
+        }
+        
+        return 0
+    }
+
+    
     let apiOperation (httpMethod : string) =
         apiOperation {
             name              $"unocashapimapifunction{httpMethod.ToLower()}"
@@ -396,15 +408,41 @@ let infra() =
     [ "GET"; "POST"; "DELETE"; "PUT" ] |>
     List.map apiOperation
     
-    blob {
-        name                 "unocashwebconfig"
-        resourceName         "apibaseurl"
-        storageAccountName   storage.Name
-        storageContainerName webContainer.Name
-        resourceType         "Block"
-        source               { Text = config.["WebEndpoint"] + "/api" }.ToPulumiType
+    output {
+        let! url = apiManagement.GatewayUrl
+        
+        blob {
+            name                 "unocashwebconfig"
+            resourceName         "apibaseurl"
+            storageAccountName   storage.Name
+            storageContainerName webContainer.Name
+            resourceType         "Block"
+            source               { Text = url + "/api" }.ToPulumiType
+        }
+        
+        return 0
     }
 
+    let fulmaPublishDir =
+        "/home/uno/savs/sourcecode/dotNET/UnoCash/UnoCash.Fulma/output/"
+
+    let getContentType fileName =
+        match FileExtensionContentTypeProvider().TryGetContentType(fileName) with
+        | true, ct -> ct
+        | _        -> null
+
+    Directory.EnumerateFiles(fulmaPublishDir, "*", SearchOption.AllDirectories) |>
+    Seq.iteri(fun index file -> (blob {
+        name                 $"unocashblob{index}"
+        source               { Path = file }.ToPulumiType
+        accessTier           "Hot"
+        contentType          (getContentType file.[fulmaPublishDir.Length..])
+        resourceType         "Block"
+        resourceName         file.[fulmaPublishDir.Length..]
+        storageAccountName   webContainer.StorageAccountName
+        storageContainerName webContainer.Name
+    } |> ignore))
+    
     let sasExpiry =
         output {
             let! (_, expiry) = token            
@@ -425,13 +463,7 @@ let infra() =
         // Outputs to read on next deployment to check for changes
         sasTokenOutputName,                   token.Apply fst                :> obj
         sasExpirationOutputName,              sasExpiry                      :> obj
-                               
-        // API Management policy files URLs                                        
-        "StaticWebsiteApiPolicyLink",         swApiPolicyBlobLink            :> obj
-        "StaticWebsiteApiPostPolicyLink",     swApiPostPolicyBlobLink        :> obj
-        "StaticWebsiteApiGetPolicyLink",      swApiGetPolicyBlobLink         :> obj
-        "StaticWebsiteApiGetIndexPolicyLink", swApiGetIndexPolicyBlobLink    :> obj
-        "FunctionApiPolicyLink",              functionApiPolicyBlobLink      :> obj
+
       //"LetsEncryptAccountKey",              certificate.AccountKey         :> obj
       //"Certificate",                        certificate.Pem                :> obj
     ] |> Output.unsecret
@@ -469,6 +501,4 @@ let main _ =
                      waitForDebugger ()
     | _           -> ()
 
-    Deployment.RunAsync(Func<Task<IDictionary<string, obj>>>(infra >> Task.FromResult), stackOptions)
-              .GetAwaiter()
-              .GetResult()
+    Deployment.runAsyncWithOptions (infra >> async.Return) stackOptions
