@@ -49,7 +49,7 @@ let infra() =
             accountBlobProperties {
                 corsRules [
                     accountBlobPropertiesCorsRule {
-                        allowedOrigins  "http://localhost:8080, https://unocashapimfe3967bb.azure-api.net"
+                        allowedOrigins  "http://localhost:8080"
                         //allowedOrigins  (apiManagement.GatewayUrl.Apply (fun x -> $"http://localhost:8080, {x}"))
                         allowedHeaders  "*"
                         allowedMethods  [ "PUT"; "OPTIONS" ]
