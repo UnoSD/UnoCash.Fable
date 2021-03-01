@@ -1,7 +1,11 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_EXTENSION_VERSION": "~3",
+    "StorageAccountConnectionString": "UseDevelopmentStorage=true",
+    "FormRecognizerEndpoint": "",
+    "FormRecognizerKey": "",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet"
   },
   "Host": {
