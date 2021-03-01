@@ -1,9 +1,9 @@
 ﻿module Program
 
-open Pulumi.Azure.AppService
 open Pulumi.FSharp.Azure.ApiManagement.Inputs
 open Pulumi.FSharp.Azure.AppService.Inputs
 open Pulumi.FSharp.AzureStorageSasToken
+open Pulumi.FSharp.Azure.Storage.Inputs
 open Pulumi.FSharp.Azure.ApiManagement
 open Microsoft.AspNetCore.StaticFiles
 open Pulumi.FSharp.Azure.AppInsights
@@ -12,6 +12,7 @@ open Pulumi.FSharp.AzureAD.Inputs
 open Pulumi.FSharp.Azure.Storage
 open System.Collections.Generic
 open Pulumi.FSharp.Azure.Core
+open Pulumi.Azure.AppService
 open Pulumi.FSharp.AzureAD
 open Pulumi.FSharp.Output
 open Pulumi.FSharp.Config
@@ -44,7 +45,26 @@ let infra() =
             resourceGroup          group.Name
             accountReplicationType "LRS"
             accountTier            "Standard"
+            
+            accountBlobProperties {
+                corsRules [
+                    accountBlobPropertiesCorsRule {
+                        allowedOrigins  "http://localhost:8080, https://unocashapimfe3967bb.azure-api.net"
+                        //allowedOrigins  (apiManagement.GatewayUrl.Apply (fun x -> $"http://localhost:8080, {x}"))
+                        allowedHeaders  "*"
+                        allowedMethods  [ "PUT"; "OPTIONS" ]
+                        exposedHeaders  "*"
+                        maxAgeInSeconds 60
+                    }
+                ]
+            }
         }
+        
+    container {
+        name               "unocashreceipts"
+        storageAccountName storage.Name
+        resourceName       "receipts"
+    }
         
     let webContainer =
         container {
@@ -218,7 +238,6 @@ let infra() =
             
             replyUrls [
                 io    apiManagement.GatewayUrl
-                input "https://jwt.ms"
                 input "http://localhost:8080"
             ]            
             
