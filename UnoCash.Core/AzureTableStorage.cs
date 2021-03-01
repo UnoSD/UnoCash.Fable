@@ -1,13 +1,42 @@
-﻿using Microsoft.Azure.Cosmos.Table;
+﻿using System;
+using Microsoft.Azure.Cosmos.Table;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static UnoCash.Core.ConfigurationKeys;
+using static System.Linq.Enumerable;
 
 namespace UnoCash.Core
 {
     static class AzureTableStorage
     {
+        static string Join(this IEnumerable<string> values) =>
+            string.Join("", values);
+
+        // https://docs.microsoft.com/en-us/rest/api/storageservices/Understanding-the-Table-Service-Data-Model?redirectedfrom=MSDN#characters-disallowed-in-key-fields
+        static readonly Lazy<char[]> DisallowedKeyFieldsChars = 
+            new Lazy<char[]>(() =>
+            {
+                IEnumerable<char> GetChars()
+                {
+                    yield return '/';
+                    yield return '\\';
+                    yield return '#';
+                    yield return '?';
+            
+                    foreach (var c in Range(0x0, 0x1F).Select(Convert.ToChar)) 
+                        yield return c;
+            
+                    foreach (var c in Range(0x7F, 0x9F).Select(Convert.ToChar)) 
+                        yield return c;
+                }
+
+                return GetChars().ToArray();
+            });
+        
+        public static string FormatPartitionKey(string value) =>
+            value.Split(DisallowedKeyFieldsChars.Value).Join();
+        
         static bool IsSuccessStatusCode(this int statusCode) => 
             statusCode >= 200 && statusCode <= 299;
 
