@@ -19,13 +19,13 @@ namespace UnoCash.Api
         {
             var account = req.Query["account"];
 
-            var email = req.GetUserUpn();
+            var upn = req.GetUserUpn();
 
-            log.LogWarning($"Fetching expense(s) for account: {account}, user: {email}");
+            log.LogWarning($"Fetching expense(s) for account: {account}, user: {upn}");
 
             return new OkObjectResult(Guid.TryParse(req.Query["id"], out var id) ?
-                                          await ExpenseReader.GetAsync(account, email, id):
-                                          await ExpenseReader.GetAllAsync(account, email));
+                                          await ExpenseReader.GetAsync(account, upn, id):
+                                          await ExpenseReader.GetAllAsync(account, upn));
         }
     }
 }

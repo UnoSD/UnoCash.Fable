@@ -17,7 +17,7 @@ namespace UnoCash.Core
 {
     public static class ReceiptParser
     {
-        public static async Task<Receipt> ParseAsync(string blobName, string email)
+        public static async Task<Receipt> ParseAsync(string blobName, string upn)
         {
             var container = 
                 await ConfigurationReader.GetAsync(StorageAccountConnectionString)
@@ -57,7 +57,7 @@ namespace UnoCash.Core
                 hash = EscapeRowKey(Convert.ToBase64String(md5.ComputeHash(blobStream)));
 
             var existing =
-                await AzureTableStorage.GetAllAsync("receipthashes", email)
+                await AzureTableStorage.GetAllAsync("receipthashes", AzureTableStorage.FormatPartitionKey(upn))
                                        .ConfigureAwait(false);
 
             var entity = 

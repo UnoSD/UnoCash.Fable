@@ -2,17 +2,18 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos.Table;
+using static UnoCash.Core.ExpenseStorage;
 
 namespace UnoCash.Core
 {
     public static class ExpenseWriter
     {
-        public static Task<bool> WriteAsync(this Expense expense, string email) =>
-            expense.ToTableEntity(email)
+        public static Task<bool> WriteAsync(this Expense expense, string upn) =>
+            expense.ToTableEntity(upn)
                    .WriteAsync(nameof(Expense));
 
-        static DynamicTableEntity ToTableEntity(this Expense expense, string email) =>
-            new DynamicTableEntity(email + "+" + expense.Account,
+        static DynamicTableEntity ToTableEntity(this Expense expense, string upn) =>
+            new DynamicTableEntity(GetPartitionKey(expense.Account, upn),
                 expense.Id.Coalesce(Guid.NewGuid()).ToString(),
                 "*",
                 new Dictionary<string, EntityProperty>
@@ -27,7 +28,7 @@ namespace UnoCash.Core
                     [nameof(Expense.Tags)] = EntityProperty.GeneratePropertyForString(expense.Tags)
                 });
 
-        public static Task<bool> DeleteAsync(string account, string email, Guid id) => 
-            AzureTableStorage.DeleteAsync(nameof(Expense), account + email, id.ToString());
+        public static Task<bool> DeleteAsync(string account, string upn, Guid id) => 
+            AzureTableStorage.DeleteAsync(nameof(Expense), GetPartitionKey(account, upn), id.ToString());
     }
 }
