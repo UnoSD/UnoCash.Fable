@@ -15,15 +15,6 @@ namespace UnoCash.Api
         public static Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "patch", Route = null)]
             HttpRequest req,
-            ILogger log)
-        {
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-
-            var expense = JsonConvert.DeserializeObject<Expense>(requestBody);
-
-            log.LogWarning($"Updated expense with ID: {expense.Id}");
-
-            return new OkObjectResult("");
-        }
+            ILogger log) => throw new NotImplementedException();
     }
 }
