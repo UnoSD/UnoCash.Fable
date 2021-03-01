@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Azure;
 using Azure.AI.FormRecognizer;
-using Azure.AI.FormRecognizer.Models;
 using Microsoft.Azure.Storage.Blob;
-using Newtonsoft.Json;
 using UnoCash.Dto;
 using CloudStorageAccount = Microsoft.Azure.Storage.CloudStorageAccount;
 using static UnoCash.Core.ConfigurationKeys;
@@ -25,19 +23,19 @@ namespace UnoCash.Core
                 container.GetBlockBlobReference(blobName + ".json");
 
             if (await cachedResultsBlob.ExistsAsync().ConfigureAwait(false))
-                using (var reader = new StreamReader(await cachedResultsBlob.OpenReadAsync()))
-                    using (var jsonReader = new JsonTextReader(reader))
+                using (var stream = await cachedResultsBlob.OpenReadAsync())
                 {
                     Console.WriteLine("Found receipt analysis in cache");
-                    
-                    var formFields = 
-                        new JsonSerializer().Deserialize<Dictionary<string, FormField>>(jsonReader);
+
+                    var formFields =
+                        await JsonSerializer.DeserializeAsync<Dictionary<string, UnoCashFormField>>(stream)
+                                            .ConfigureAwait(false);
 
                     return formFields.ToReceipt();
                 }
 
             Console.WriteLine("Analysing receipt");
-            
+
             var blob =
                 container.GetBlobReference(blobName);
 
@@ -69,13 +67,16 @@ namespace UnoCash.Core
 
             var recognizedForm = response.Value.Single();
 
+            var json = JsonSerializer.Serialize(recognizedForm.Fields,
+                                                new JsonSerializerOptions {WriteIndented = true});
+
             await container.GetBlockBlobReference(blobName + ".json")
-                           .UploadTextAsync(JsonConvert.SerializeObject(recognizedForm.Fields))
+                           .UploadTextAsync(json)
                            .ConfigureAwait(false);
 
-            Console.WriteLine(JsonConvert.SerializeObject(recognizedForm.Fields, Formatting.Indented));
+            Console.WriteLine(json);
 
-            return recognizedForm.Fields.ToReceipt();
+            return JsonSerializer.Deserialize<Dictionary<string, UnoCashFormField>>(json).ToReceipt();
         }
 
         static Task<CloudBlobContainer> GetReceiptsContainer() =>
@@ -84,24 +85,23 @@ namespace UnoCash.Core
                                .Map(client => client.CreateCloudBlobClient()
                                                     .GetContainerReference("receipts"));
 
-        static Receipt ToReceipt(this IReadOnlyDictionary<string, FormField> fields) =>
+        static Receipt ToReceipt(this IReadOnlyDictionary<string, UnoCashFormField> fields) =>
             new Receipt
             {
-                Payee = fields.GetOrDefault<string>("MerchantName"),
-                Date  = fields.GetOrDefault<DateTime>("TransactionDate"),
-                //Items = fields["Items"].Value.AsString(),
+                Payee  = fields.GetOrDefault<string>("MerchantName"),
+                Date   = fields.GetOrDefault<DateTime>("TransactionDate"),
                 Amount = fields.GetOrDefault<decimal>("Total")
             };
 
         static T GetOrDefault<T>(
-            this IReadOnlyDictionary<string, FormField> dict,
+            this IReadOnlyDictionary<string, UnoCashFormField> dict,
             string key,
             T defaultValue = default) =>
             dict.TryGetValue(key, out var field) ?
                 ChangeTypeOrDefault(field, defaultValue) :
                 defaultValue;
 
-        static T ChangeTypeOrDefault<T>(FormField field, T defaultValue)
+        static T ChangeTypeOrDefault<T>(UnoCashFormField field, T defaultValue)
         {
             try
             {
