@@ -20,11 +20,22 @@ let init _ =
     emptyModel, Cmd.OfPromise.perform loadConfig emptyModel.ApiBaseUrl SetApiBaseUrl
 
 let private loadExpenses (account, apiBaseUrl) =
-    fetch (sprintf "%s?account=%s" (getExpensesUrl apiBaseUrl) account) [
-        Credentials RequestCredentials.Include
-    ] |>
-    Promise.bind (fun x -> x.text()) |>
-    Promise.map Expense.ParseArray
+    promise {
+        let url =
+            apiBaseUrl |>
+            getExpensesUrl
+        
+        let urlWithAccount =
+            sprintf "%s?account=%s" url account
+        
+        let! response =
+            fetch urlWithAccount [ Credentials RequestCredentials.Include ]
+        
+        let! text =
+            response.text()
+        
+        return text |> Expense.ParseArray
+    }
 
 let private loadExpensesCmd account apiBaseUrl =
     Cmd.OfPromise.perform loadExpenses (account, apiBaseUrl) ShowExpensesLoaded
@@ -62,15 +73,15 @@ let private addExpense (model, apiBaseUrl) =
                      tagsCsv
                      newId
     
-    Fetch.fetch (addExpenseUrl apiBaseUrl)
-                [ Credentials RequestCredentials.Include
-                  Method HttpMethod.POST
-                  Body <| U3.Case3 body ]
+    fetch (addExpenseUrl apiBaseUrl)
+          [ Credentials RequestCredentials.Include
+            Method HttpMethod.POST
+            Body <| U3.Case3 body ]
 
 let private removeExpense (id, account, apiBaseUrl) =
-    Fetch.fetch (sprintf "%s?id=%s&account=%s" (deleteExpenseUrl apiBaseUrl) id account)
-                [ Method HttpMethod.DELETE
-                  Credentials RequestCredentials.Include ]
+    fetch (sprintf "%s?id=%s&account=%s" (deleteExpenseUrl apiBaseUrl) id account)
+          [ Method HttpMethod.DELETE
+            Credentials RequestCredentials.Include ]
     
 let private toModel (expense : Expense) =
     {
