@@ -54,7 +54,7 @@ let infra() =
                         allowedHeaders  "*"
                         allowedMethods  [ "PUT"; "OPTIONS" ]
                         exposedHeaders  "*"
-                        maxAgeInSeconds 60
+                        maxAgeInSeconds 5
                     }
                 ]
             }
