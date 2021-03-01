@@ -13,7 +13,7 @@ let receiptParse (blobName, apiBaseUrl) =
             sprintf "%s?blobName=%s" (getReceiptDataUrl apiBaseUrl) blobName
             
         let! response =
-            Fetch.fetch url []
+            fetch url []
         
         let! json =
             response.text()
@@ -45,23 +45,19 @@ let receiptParse (blobName, apiBaseUrl) =
 let fileUpload (blob, name, contentLength, apiBaseUrl) =
     promise {
         let! response =
-            Fetch.fetch (receiptUploadSasTokenUrl apiBaseUrl) []
+            fetch (receiptUploadSasTokenUrl apiBaseUrl) []
         
-        let! sasToken =
+        let! url =
             response.text()
         
-        let url =
-            sprintf "https://%s.blob.core.windows.net/%s/%s%s" storageAccount
-                                                               receiptStorageContainer
-                                                               name
-                                                               sasToken
-        
         let! _ =
-            Fetch.fetch url
-                        [ Method HttpMethod.PUT
-                          requestHeaders [ HttpRequestHeaders.Custom ("x-ms-content-length", contentLength)
-                                           HttpRequestHeaders.Custom ("x-ms-blob-type", "BlockBlob") ]
-                          Body <| U3.Case1 blob ]
+            fetch url
+                  [ Method HttpMethod.PUT
+                    Credentials RequestCredentials.Include
+                    requestHeaders [ HttpRequestHeaders.Custom ("x-ms-content-length", contentLength)
+                                     HttpRequestHeaders.Custom ("x-ms-blob-content-disposition", sprintf "attachment; filename=\"%s\"" name)
+                                     HttpRequestHeaders.Custom ("x-ms-blob-type", "BlockBlob") ]
+                    Body <| U3.Case1 blob ]
         
         return name
     } 

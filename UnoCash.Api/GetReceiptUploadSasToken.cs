@@ -20,23 +20,31 @@ namespace UnoCash.Api
             HttpRequest req,
             ILogger log) =>
             ConfigurationReader.GetAsync(StorageAccountConnectionString)
-                               .Bind(cs => GetSasToken(cs, log));
+                               .Bind(cs => GetBlobUrl(cs, log));
         
         
-        static Task<IActionResult> GetSasToken(string connectionString, ILogger log) =>
+        static Task<IActionResult> GetBlobUrl(string connectionString, ILogger log) =>
+            Guid.NewGuid()
+                .ToString("N")
+                .Tap(guid => log.LogWarning($"Getting blob {guid} upload URL for receipts container"))
+                .GetBlobUrl(connectionString);
+
+        static Task<IActionResult> GetBlobUrl(this string blobName, string connectionString) =>
             CloudStorageAccount.Parse(connectionString)
-                               .Tap(_ => log.LogWarning("Getting blob upload SAS token for receipts container"))
                                .CreateCloudBlobClient()
                                .GetContainerReference("receipts")
-                               .GetSharedAccessSignature(new SharedAccessBlobPolicy
-                               {
-                                   Permissions            = SharedAccessBlobPermissions.Create |
-                                                            // Remove, is only to override existing blobs
-                                                            SharedAccessBlobPermissions.Write,
-                                   SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(2)
-                                   // Add IP range limit? Other access policy?
-                               })
-                               .ToOkObject()
-                               .ToTask<IActionResult>();
+                               .GetBlobUrl(blobName);
+
+        static Task<IActionResult> GetBlobUrl(this CloudBlobContainer cbc, string blobName) =>
+            cbc.GetBlockBlobReference(blobName)
+               .GetSharedAccessSignature(new SharedAccessBlobPolicy
+               {
+                   Permissions            = SharedAccessBlobPermissions.Create,
+                   SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(2)
+                   // Add IP range limit? Other access policy?
+               }/*, "", SharedAccessProtocol.HttpsOnly, new IPAddressOrRange("CALLER")*/)
+               .TMap(sas => $"{cbc.Uri}/{blobName}{sas}")
+               .ToOkObject()
+               .ToTask<IActionResult>();
     }
 }
