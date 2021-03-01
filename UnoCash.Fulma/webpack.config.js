@@ -76,7 +76,10 @@ module.exports = (env, options) => {
             publicPath: "/",
             port: 8080,
             hot: true,
-            inline: true
+            inline: true,
+            headers: {
+                'Set-Cookie': 'jwtToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwL3YyLjAiLCJpYXQiOjE2MTQ1ODk4MjksImV4cCI6MTY0NjEyNTgyOSwiYXVkIjoiMTExMTExMTEtMTExMS0xMTExLTExMTEtMTExMTExMTExMTExIiwic3ViIjoibXlfYWFkX3N1YmplY3QiLCJ1cG4iOiJ1bm9zZF9leHRlcm5hbG1haWwuY29tI0VYVCNAbXlkaXJlY3Rvcnkub25taWNyb3NvZnQuY29tIiwibmFtZSI6IlVub1NEIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidW5vc2RAZXh0ZXJuYWxtYWlsLmNvbSJ9.eDEiXVVO8u2YCuqjWJ3id8cuWcmDcao1ix5y1ik5nlg'
+            }
         },
         module: {
             rules: [
