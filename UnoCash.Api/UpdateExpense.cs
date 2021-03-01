@@ -1,12 +1,10 @@
-using System.IO;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using UnoCash.Core;
 
 namespace UnoCash.Api
 {
@@ -14,7 +12,7 @@ namespace UnoCash.Api
     {
         // Upsert and delete add?
         [FunctionName("UpdateExpense")]
-        public static async Task<IActionResult> Run(
+        public static Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "patch", Route = null)]
             HttpRequest req,
             ILogger log)
