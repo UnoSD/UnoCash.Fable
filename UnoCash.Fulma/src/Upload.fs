@@ -13,7 +13,7 @@ let receiptParse (blobName, apiBaseUrl) =
             sprintf "%s?blobName=%s" (getReceiptDataUrl apiBaseUrl) blobName
             
         let! response =
-            fetch url []
+            fetch url [ Credentials RequestCredentials.Include ]
         
         let! json =
             response.text()
@@ -58,6 +58,6 @@ let fileUpload (blob, name, contentLength, apiBaseUrl) =
                                      HttpRequestHeaders.Custom ("x-ms-blob-content-disposition", sprintf "attachment; filename=\"%s\"" name)
                                      HttpRequestHeaders.Custom ("x-ms-blob-type", "BlockBlob") ]
                     Body <| U3.Case1 blob ]
-        
-        return name
+                
+        return url.Split([| "receipts/"; "?" |], StringSplitOptions.None).[1]
     } 
