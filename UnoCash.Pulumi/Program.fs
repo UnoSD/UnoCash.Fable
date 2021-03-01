@@ -270,7 +270,6 @@ let infra() =
         xmlContent        (policyFromFile "StaticWebsiteApimGetIndexOperationPolicy.xml")
     }
         
-    (* TODO: Small CE: apiOperationWithPolicyFromXmlFile { ... } *)
     let getOperation =
         apiOperation {
             name              "unocashapimgetoperation"
@@ -348,17 +347,17 @@ let infra() =
             apiManagementName    apiManagement.Name
             displayName          "API"
             protocols            [ "https" ]
-            serviceUrl           (app.DefaultHostname.Apply (sprintf "https://%s"))
+            serviceUrl           (app.DefaultHostname.Apply (sprintf "https://%s/api"))
             path                 ""
             revision             "1"
             subscriptionRequired false
         }
     
-    // TODO: Also "get" methods
     let masterKey =
         output {
             let! functionAppName = app.Name
             let! resourceGroupName = app.ResourceGroupName
+            let! _ = app.Id
             
             let! res = GetFunctionAppHostKeys.InvokeAsync(GetFunctionAppHostKeysArgs(Name = functionAppName,
                                                                                      ResourceGroupName = resourceGroupName))
@@ -417,7 +416,7 @@ let infra() =
             storageAccountName   storage.Name
             storageContainerName webContainer.Name
             resourceType         "Block"
-            source               { Text = url + "/api" }.ToPulumiType
+            source               { Text = url }.ToPulumiType
         }
         
         return 0
