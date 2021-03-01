@@ -74,6 +74,22 @@ let asyncContext =
         return 0 // We don't need this!
     } *)
 
+(* TODO: Support also "get" methods
+output {
+    let! functionAppName = app.Name
+    let! resourceGroupName = app.ResourceGroupName
+    
+    let! res = GetFunctionAppHostKeys.InvokeAsync(GetFunctionAppHostKeysArgs(Name = functionAppName,
+                                                                             ResourceGroupName = resourceGroupName))
+    
+    return res.MasterKey
+} *)
+
+(* TODO: Add an "await created" resource:
+output { do! resource }
+// Behind the scene it may .Id.Apply(?) or something better if possible
+*)
+
 module Output =
     let map (func : 'a -> 'b) (o : Pulumi.Output<'a>) =
         o.Apply func
