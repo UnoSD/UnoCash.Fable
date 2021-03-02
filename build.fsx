@@ -11,6 +11,8 @@ open Fake.IO.Globbing.Operators
 open Fake.JavaScript
 open Newtonsoft.Json.Linq
 
+// Install pulumi/az cli/yarn
+
 // Requires pulumi manual approval
 // dotnet fake run build.fsx -t Deploy
 
@@ -80,10 +82,12 @@ Target.create "PublishApi" (fun _ ->
 )
 
 Target.create "Clean" (fun _ ->
-    !! "src/bin"
-    ++ "src/obj"
-    ++ "output"
-    |> Seq.iter Shell.cleanDir
+    !! "**/bin"
+    ++ "**/obj"
+    ++ "**/output"
+    -- "**/.fable/**"
+    -- "**/node_modules/**"
+    |> Seq.iter ((fun x -> Trace.log x; x) >> Shell.cleanDir)
 )
 
 Target.create "Install" (fun _ ->
