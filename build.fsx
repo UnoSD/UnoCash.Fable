@@ -160,8 +160,7 @@ Target.create "UpdateDevelopmentApiLocalSettings" (fun _ ->
 Target.create "Publish" ignore
 Target.create "Deploy" ignore
 
-"Clean"
-    ==> "Install"
+"Install"
     ==> "YarnInstall"
     ==> "PublishFable"
 
