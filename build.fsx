@@ -14,6 +14,10 @@ open Newtonsoft.Json.Linq
 // Requires pulumi manual approval
 // dotnet fake run build.fsx -t Deploy
 
+Target.create "AzCliSetUp" (fun _ ->
+// Set up az cli subscription for Pulumi
+)
+
 Target.create "PublishApi" (fun _ ->
     !! "UnoCash.Api/**/publish"
     |> Shell.deleteDirs
@@ -95,6 +99,7 @@ Target.create "UpdateDevelopmentApiLocalSettings" (fun _ ->
         
     let connectionString =
         proc.Result.Output |>
+        String.trimEndChars [| '\n' |] |>
         JToken.op_Implicit
 
     let settingsFilePath =

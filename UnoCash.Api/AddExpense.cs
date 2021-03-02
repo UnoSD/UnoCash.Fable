@@ -20,6 +20,9 @@ namespace UnoCash.Api
             [HttpTrigger(AuthorizationLevel.Function, "post")]
             HttpRequest req,
             ILogger log) =>
+            AspNetExtensions.FunctionExceptionHandler(() => RunInternal(req, log), log);
+        
+        static Task<IActionResult> RunInternal(HttpRequest req, ILogger log) =>
             req.Tap(_ => log.LogInformation("Adding a new expense"))
                .Body
                .TMap(body => new StreamReader(body))
