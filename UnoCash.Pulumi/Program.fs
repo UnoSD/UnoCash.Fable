@@ -345,8 +345,8 @@ let infra() =
                 "WEBSITE_RUN_FROM_PACKAGE"       , io codeBlobUrl
                 "APPINSIGHTS_INSTRUMENTATIONKEY" , io appInsights.InstrumentationKey
                 "StorageAccountConnectionString" , io storage.PrimaryConnectionString
-                "FormRecognizerKey"              , input ""
-                "FormRecognizerEndpoint"         , input ""
+                "FormRecognizerKey"              , input config.["FormRecognizerKey"]
+                "FormRecognizerEndpoint"         , input config.["FormRecognizerEndpoint"]
             ]
             
             functionAppSiteConfig {
