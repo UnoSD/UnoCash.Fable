@@ -9,6 +9,7 @@ open Fake.DotNet
 open Fake.IO
 open Fake.IO.Globbing.Operators
 open Fake.JavaScript
+open Newtonsoft.Json.Linq
 
 // cd UnoCash.Pulumi
 // pulumi up
@@ -80,6 +81,38 @@ Target.create "PulumiUp" (fun _ ->
     ignore
 )
 
+Target.create "PulumiDestroy" (fun _ ->
+    CreateProcess.fromRawCommandLine "pulumi" "destroy" |>
+    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
+    Proc.run |>
+    ignore
+)
+
+Target.create "UpdateDevelopmentApiLocalSettings" (fun _ ->
+    let proc =
+        CreateProcess.fromRawCommandLine "pulumi" "stack output StorageConnectionString --show-secrets" |>
+        CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
+        CreateProcess.redirectOutput |>
+        Proc.run
+        
+    let connectionString =
+        proc.Result.Output |>
+        JToken.op_Implicit
+
+    let settingsFilePath =
+        "UnoCash.Api/local.settings.json"
+
+    let json = 
+        File.readAsString settingsFilePath |>
+        JObject.Parse
+   
+    json.["Values"].["AzureWebJobsStorage"] <- connectionString
+    json.["Values"].["StorageAccountConnectionString"] <- connectionString
+
+    json.ToString() |>
+    File.writeString false settingsFilePath
+)
+
 Target.create "Publish" ignore
 Target.create "Deploy" ignore
 
@@ -98,6 +131,7 @@ Target.create "Deploy" ignore
     ==> "PulumiUp"
     // Twice to apply the outputs of the first run
     //==> "PulumiUp"
+    =?> ("UpdateDevelopmentApiLocalSettings", BuildServer.isLocalBuild)
     ==> "Deploy"
 
 Target.runOrDefault "PublishFable"

@@ -480,22 +480,23 @@ let infra() =
         }
     
     dict [
-        "Hostname",                           app.DefaultHostname            :> obj
-        "ResourceGroup",                      group.Name                     :> obj
-        "StorageAccount",                     storage.Name                   :> obj
-        apiManagementEndpoint,                apiManagement.GatewayUrl       :> obj
-        "ApiManagement",                      apiManagement.Name             :> obj
-        "StaticWebsiteApi",                   swApi.Name                     :> obj
-        "FunctionApi",                        apiFunction.Name               :> obj
-        "ApplicationId",                      spaAdApplication.ApplicationId :> obj
-        "FunctionName",                       app.Name                       :> obj
-        
-        // Outputs to read on next deployment to check for changes
-        sasTokenOutputName,                   token.Apply fst                :> obj
-        sasExpirationOutputName,              sasExpiry                      :> obj
-
-      //"LetsEncryptAccountKey",              certificate.AccountKey         :> obj
-      //"Certificate",                        certificate.Pem                :> obj
+        "Hostname",                app.DefaultHostname             :> obj
+        "ResourceGroup",           group.Name                      :> obj
+        "StorageAccount",          storage.Name                    :> obj
+        "StorageConnectionString", storage.PrimaryConnectionString :> obj
+        apiManagementEndpoint,     apiManagement.GatewayUrl        :> obj
+        "ApiManagement",           apiManagement.Name              :> obj
+        "StaticWebsiteApi",        swApi.Name                      :> obj
+        "FunctionApi",             apiFunction.Name                :> obj
+        "ApplicationId",           spaAdApplication.ApplicationId  :> obj
+        "FunctionName",            app.Name                        :> obj
+                                                                              
+        // Outputs to read on next deployment to check for changes            
+        sasTokenOutputName,        token.Apply fst                 :> obj
+        sasExpirationOutputName,   sasExpiry                       :> obj
+                                                                   
+      //"LetsEncryptAccountKey",   certificate.AccountKey          :> obj
+      //"Certificate",             certificate.Pem                 :> obj
     ] |> Output.unsecret
 
 type bclList<'a> =
