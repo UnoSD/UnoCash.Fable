@@ -11,10 +11,8 @@ open Fake.IO.Globbing.Operators
 open Fake.JavaScript
 open Newtonsoft.Json.Linq
 
-// cd UnoCash.Pulumi
-// pulumi up
-
-// Update local.settings.json with new storage account
+// Requires pulumi manual approval
+// dotnet fake run build.fsx -t Deploy
 
 Target.create "PublishApi" (fun _ ->
     !! "UnoCash.Api/**/publish"
