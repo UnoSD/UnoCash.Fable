@@ -89,7 +89,7 @@ namespace UnoCash.Core
             new Receipt
             {
                 Payee  = fields.GetOrDefault<string>("MerchantName"),
-                Date   = fields.GetOrDefault<DateTime>("TransactionDate"),
+                Date   = fields.GetOrDefault("TransactionDate", DateTime.Today),
                 Amount = fields.GetOrDefault<decimal>("Total")
             };
 
