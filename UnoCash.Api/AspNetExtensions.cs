@@ -1,6 +1,8 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using UnoCash.Core;
 
@@ -24,5 +26,18 @@ namespace UnoCash.Api
 
         public static OkObjectResult ToOkObject<T>(this T obj) =>
             new OkObjectResult(obj);
+
+        internal static async Task<T> FunctionExceptionHandler<T>(this Func<Task<T>> func, ILogger log)
+        {
+            try
+            {
+                return await func().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                log.LogError("{E}", e);
+                throw;
+            }
+        }
     }
 }
