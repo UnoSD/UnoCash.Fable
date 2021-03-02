@@ -45,15 +45,16 @@ let infra() =
     let apiManagementEndpoint =
         "ApiManagementEndpoint"
     
-    let origins =
+    let (origins, isFirstRun) =
         output {
             let! outputs =
                 stackOutputs
                 
             return match outputs.TryGetValue apiManagementEndpoint with
-                   | true, endpoint -> $"http://localhost:8080, {endpoint}"
-                   | _              -> "http://localhost:8080"
-        }
+                   | true, endpoint -> $"http://localhost:8080, {endpoint}", false
+                   | _              -> "http://localhost:8080", true
+        } |>
+        Output.toTuple
     
     let storage =
         account {
@@ -111,7 +112,7 @@ let infra() =
             storageAccountName   storage.Name
             storageContainerName buildContainer.Name
             resourceType         "Block"
-            source               { Path = config.["ApiBuild"] }.ToPulumiType
+            source               { ArchivePath = config.["ApiBuild"] }.ToPulumiType
         }
     
     let codeBlobUrl =
@@ -480,6 +481,7 @@ let infra() =
         }
     
     dict [
+        "IsFirstRun",              isFirstRun                      :> obj
         "Hostname",                app.DefaultHostname             :> obj
         "ResourceGroup",           group.Name                      :> obj
         "StorageAccount",          storage.Name                    :> obj

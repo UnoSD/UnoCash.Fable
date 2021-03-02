@@ -106,3 +106,6 @@ module Output =
                                        | :? Output<'a> as y -> Output.Unsecret<'a>(y) :> obj
                                        | x                  -> x) |>
         dict
+        
+    let toTuple arg =
+        map fst arg, map snd arg

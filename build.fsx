@@ -14,8 +14,54 @@ open Newtonsoft.Json.Linq
 // Requires pulumi manual approval
 // dotnet fake run build.fsx -t Deploy
 
+module Pulumi =
+    let private pulumi' redirectOutput args = 
+        CreateProcess.fromRawCommandLine "pulumi" args |>
+        CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
+        redirectOutput |>
+        Proc.run
+
+    let private pulumi args =
+        pulumi' id args |> ignore
+    
+    let setConfig key value =
+        sprintf "config set %s %s" key value |>
+        pulumi
+
+    let up () =
+        pulumi "up"
+
+    let destroy () =
+        pulumi "destroy"
+
+    let preview () =
+        pulumi "preview"
+
+    let tryGetStackOutput key isSecret =
+        (if isSecret then "--show-secrets" else "") |>
+        sprintf "stack output %s %s" key |>
+        pulumi' CreateProcess.redirectOutput |>
+        (fun o -> match o.ExitCode with
+                  | 0 -> Some o.Result.Output
+                  | _ -> None) |>
+        Option.map (String.trimEndChars [| '\n' |])
+
 Target.create "AzCliSetUp" (fun _ ->
-// Set up az cli subscription for Pulumi
+    // Install az cli only if not present
+    CreateProcess.fromRawCommandLine "curl" "-L https://aka.ms/InstallAzureCli | bash" |>
+    Proc.run |>
+    ignore
+
+    // az login if not logged in
+    CreateProcess.fromRawCommandLine "az" "login" |>
+    Proc.run |>
+    ignore
+
+    // az account set --subscription <from config or prompt?>
+    // az login if not logged in
+    CreateProcess.fromRawCommandLine "az" "account set --subscription <>" |>
+    Proc.run |>
+    ignore
 )
 
 Target.create "PublishApi" (fun _ ->
@@ -54,6 +100,7 @@ Target.create "YarnInstall" (fun _ ->
 )
 
 Target.create "PublishFable" (fun _ ->
+    // Get MD5 of the project, if unchanged, don't run
     Yarn.exec "webpack --mode production"
               (fun o -> { o with WorkingDirectory = "UnoCash.Fulma" })
 )
@@ -64,42 +111,32 @@ Target.create "WatchFable" (fun _ ->
 )
 
 Target.create "PulumiPreview" (fun _ ->
-    CreateProcess.fromRawCommandLine "pulumi" "preview" |>
-    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
-    Proc.run |>
-    ignore
+    Pulumi.preview()
+)
+
+Target.create "PulumiSetVariables" (fun _ ->
+    !! "UnoCash.Api/**/publish" |>
+    Seq.exactlyOne |>
+    Pulumi.setConfig "UnoCash.Pulumi:ApiBuild"
 )
 
 Target.create "PulumiUp" (fun _ ->
     // Twice to apply the outputs of the first run (figure a way of running the target twice)
-    CreateProcess.fromRawCommandLine "pulumi" "up" |>
-    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
-    Proc.run |>
-    ignore
+    // If not the first time, run only once; also, use --yes once subscription is confirmed
     
-    CreateProcess.fromRawCommandLine "pulumi" "up" |>
-    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
-    Proc.run |>
-    ignore
+    match Pulumi.tryGetStackOutput "IsFirstRun" true |> Option.map bool.Parse with
+    | Some false -> Pulumi.up()
+    | _          -> Pulumi.up(); Pulumi.up()
 )
 
 Target.create "PulumiDestroy" (fun _ ->
-    CreateProcess.fromRawCommandLine "pulumi" "destroy" |>
-    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
-    Proc.run |>
-    ignore
+    Pulumi.destroy()
 )
 
 Target.create "UpdateDevelopmentApiLocalSettings" (fun _ ->
-    let proc =
-        CreateProcess.fromRawCommandLine "pulumi" "stack output StorageConnectionString --show-secrets" |>
-        CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
-        CreateProcess.redirectOutput |>
-        Proc.run
-        
     let connectionString =
-        proc.Result.Output |>
-        String.trimEndChars [| '\n' |] |>
+        Pulumi.tryGetStackOutput "StorageConnectionString" true |>
+        Option.defaultWith (fun _ -> failwith "Missing StorageConnectionString in Pulumi outputs") |>
         JToken.op_Implicit
 
     let settingsFilePath =
@@ -131,6 +168,7 @@ Target.create "Deploy" ignore
     <== [ "PublishFable"; "PublishApi" ]
 
 "Publish"
+    ==> "PulumiSetVariables"
     ==> "PulumiUp"
     // Twice to apply the outputs of the first run
     //==> "PulumiUp"
