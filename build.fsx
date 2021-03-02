@@ -67,6 +67,22 @@ Target.create "PulumiPreview" (fun _ ->
     ignore
 )
 
+Target.create "PulumiUp" (fun _ ->
+    // Twice to apply the outputs of the first run (figure a way of running the target twice)
+    CreateProcess.fromRawCommandLine "pulumi" "up" |>
+    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
+    Proc.run |>
+    ignore
+    
+    CreateProcess.fromRawCommandLine "pulumi" "up" |>
+    CreateProcess.withWorkingDirectory "UnoCash.Pulumi" |>
+    Proc.run |>
+    ignore
+)
+
+Target.create "Publish" ignore
+Target.create "Deploy" ignore
+
 "Clean"
     ==> "Install"
     ==> "YarnInstall"
@@ -74,5 +90,14 @@ Target.create "PulumiPreview" (fun _ ->
 
 "WatchFable"
     <== [ "YarnInstall" ]
+
+"Publish"
+    <== [ "PublishFable"; "PublishApi" ]
+
+"Publish"
+    ==> "PulumiUp"
+    // Twice to apply the outputs of the first run
+    //==> "PulumiUp"
+    ==> "Deploy"
 
 Target.runOrDefault "PublishFable"

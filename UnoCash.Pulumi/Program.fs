@@ -39,6 +39,22 @@ let infra() =
             name "unocash"
         }
     
+    let stackOutputs =
+        StackReference(Deployment.Instance.StackName).Outputs
+   
+    let apiManagementEndpoint =
+        "ApiManagementEndpoint"
+    
+    let origins =
+        output {
+            let! outputs =
+                stackOutputs
+                
+            return match outputs.TryGetValue apiManagementEndpoint with
+                   | true, endpoint -> $"http://localhost:8080, {endpoint}"
+                   | _              -> "http://localhost:8080"
+        }
+    
     let storage =
         account {
             name                   "unocashstorage"
@@ -49,8 +65,7 @@ let infra() =
             accountBlobProperties {
                 corsRules [
                     accountBlobPropertiesCorsRule {
-                        allowedOrigins  "http://localhost:8080"
-                        //allowedOrigins  (apiManagement.GatewayUrl.Apply (fun x -> $"http://localhost:8080, {x}"))
+                        allowedOrigins  origins
                         allowedHeaders  "*"
                         allowedMethods  [ "PUT"; "OPTIONS" ]
                         exposedHeaders  "*"
@@ -125,9 +140,6 @@ let infra() =
                 resourceType "SystemAssigned"
             }
         }
-        
-    let stackOutputs =
-        StackReference(Deployment.Instance.StackName).Outputs
 
     logger {
         name              "unocashapimlog"
@@ -471,7 +483,7 @@ let infra() =
         "Hostname",                           app.DefaultHostname            :> obj
         "ResourceGroup",                      group.Name                     :> obj
         "StorageAccount",                     storage.Name                   :> obj
-        "ApiManagementEndpoint",              apiManagement.GatewayUrl       :> obj
+        apiManagementEndpoint,                apiManagement.GatewayUrl       :> obj
         "ApiManagement",                      apiManagement.Name             :> obj
         "StaticWebsiteApi",                   swApi.Name                     :> obj
         "FunctionApi",                        apiFunction.Name               :> obj
