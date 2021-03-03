@@ -30,22 +30,18 @@ module GetExpenses =
             
             log.LogInformation("Get expenses for upn: {upn}", upn)
             
-            let id =
+            let guid =
                 match req.Query |> HttpRequest.tryGetValues "id" with
-                | Some [| value |] -> Some value
+                | Some [| value |] -> match Guid.TryParse(value) with
+                                      | Value x -> Some x
+                                      | _       -> failwith "Invalid expense guid"
                 | Some _           -> failwith "Multiple ids not supported"
                 | _                -> None
-            
-            let idGuid =
-                id |>
-                Option.map (fun id -> match Guid.TryParse(id) with
-                                      | Value x -> x
-                                      | _       -> failwith "Invalid expense guid")
 
-            log.LogInformation("Get expense for id: {id}", idGuid)
+            log.LogInformation("Get expense for id: {guid}", guid)
             
             let! resultTask =
-                match idGuid with
+                match guid with
                 | Some idGuid -> ExpenseReader.GetAsync(account, upn, idGuid)
                 | None        -> ExpenseReader.GetAllAsync(account, upn)
             
