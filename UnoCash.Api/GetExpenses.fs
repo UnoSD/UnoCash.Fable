@@ -33,7 +33,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (l
             {
                 Key      = "id"
                 Value    = tryParseGuid
-                Empty    = Ok None
+                Empty    = Error "Empty id value"
                 Missing  = Ok None
                 Multiple = Error "Multiple ids not supported" |> ignoreSnd
             } |> getQueryStringResult req.Query
