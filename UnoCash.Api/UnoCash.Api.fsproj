@@ -17,6 +17,8 @@
         <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
         
         <Compile Include="Option.fs" />
+        
+        <Compile Include="HttpRequest.fs" />
         <Compile Include="GetExpenses.fs" />
     </ItemGroup>
 </Project>

@@ -16,10 +16,10 @@ module GetExpenses =
             log.LogInformation("Get expenses called")
 
             let account =
-                match req.Query.TryGetValue "account" with
-                | Value a when a.Count = 1 -> a.[0]
-                | Value a when a.Count > 1 -> failwith "Multiple accounts not supported"
-                | _                        -> failwith "Missing account name"
+                match req.Query |> HttpRequest.tryGetValues "account" with
+                | Some [| value |] -> value
+                | Some _           -> failwith "Multiple accounts not supported"
+                | _                -> failwith "Missing account name"
 
             log.LogInformation("Get expenses for account: {account}", account)
             
@@ -35,10 +35,10 @@ module GetExpenses =
             log.LogInformation("Get expenses for upn: {upn}", upn)
             
             let id =
-                match req.Query.TryGetValue "id" with
-                | Value a when a.Count = 1 -> Some a.[0]
-                | Value a when a.Count > 1 -> failwith "Multiple ids not supported"
-                | _                        -> None
+                match req.Query |> HttpRequest.tryGetValues "id" with
+                | Some [| value |] -> Some value
+                | Some _           -> failwith "Multiple ids not supported"
+                | _                -> None
             
             let idGuid =
                 id |>
