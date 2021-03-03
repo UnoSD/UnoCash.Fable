@@ -6,19 +6,20 @@
         <FSharpCoreImplicitPackageVersion>5.0.*</FSharpCoreImplicitPackageVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.0" />
-        <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
-        <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
+        <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.0"/>
+        <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0"/>
+        <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11"/>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0"/>
 
-        <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.csproj" />
+        <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.csproj"/>
 
-        <None Include="host.json" CopyToOutputDirectory="PreserveNewest" />
-        <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
-        
-        <Compile Include="Option.fs" />
-        
-        <Compile Include="HttpRequest.fs" />
-        <Compile Include="GetExpenses.fs" />
+        <None Include="host.json" CopyToOutputDirectory="PreserveNewest"/>
+        <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
+
+        <Compile Include="Option.fs"/>
+
+        <Compile Include="HttpRequest.fs"/>
+        <Compile Include="JwtToken.fs"/>
+        <Compile Include="GetExpenses.fs"/>
     </ItemGroup>
 </Project>

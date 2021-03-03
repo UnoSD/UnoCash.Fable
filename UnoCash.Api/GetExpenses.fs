@@ -1,7 +1,6 @@
 namespace UnoCash.Api
 
 open System
-open System.IdentityModel.Tokens.Jwt
 open Microsoft.AspNetCore.Mvc
 open Microsoft.Azure.WebJobs
 open Microsoft.Azure.WebJobs.Extensions.Http
@@ -22,13 +21,10 @@ module GetExpenses =
                 | _                -> failwith "Missing account name"
 
             log.LogInformation("Get expenses for account: {account}", account)
-            
+                
             let upn =
                 match req.Cookies.TryGetValue "jwtToken" with
-                | Value t -> JwtSecurityTokenHandler().ReadJwtToken(t).Claims |>
-                             Seq.filter (fun c -> c.Type = "upn") |>
-                             Seq.tryExactlyOne |>
-                             Option.map (fun u -> u.Value) |>
+                | Value t -> JwtToken.getClaim "upn" t |>
                              Option.defaultWith (fun () -> failwith "Missing upn claim")                      
                 | _       -> failwith "Missing jwtToken cookie"
             
