@@ -16,6 +16,7 @@
         <None Include="host.json" CopyToOutputDirectory="PreserveNewest"/>
         <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
 
+        <Compile Include="Async.fs"/>
         <Compile Include="Option.fs"/>
         <Compile Include="Result.fs"/>
         <Compile Include="HttpRequest.fs"/>

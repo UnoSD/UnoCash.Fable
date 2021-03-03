@@ -2,7 +2,7 @@ module UnoCash.Api.JwtToken
 
 open System.IdentityModel.Tokens.Jwt
 
-let getClaim type' token =
+let tryGetClaim type' token =
     JwtSecurityTokenHandler().ReadJwtToken(token).Claims |>
     Seq.filter (fun c -> c.Type = type') |>
     Seq.tryExactlyOne |>

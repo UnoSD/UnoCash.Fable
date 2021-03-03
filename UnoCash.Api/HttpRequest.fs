@@ -28,3 +28,8 @@ let getQueryStringResult query config =
     | Some [| value |] -> config.Value value
     | Some values      -> config.Multiple values
     | _                -> config.Missing
+    
+let tryGetCookie key (cookies : IRequestCookieCollection) =
+    match cookies.TryGetValue key with
+    | Value t -> Some t 
+    | _       -> None
