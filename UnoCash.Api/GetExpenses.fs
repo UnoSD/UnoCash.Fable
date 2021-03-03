@@ -13,38 +13,54 @@ module GetExpenses =
     let run ([<HttpTrigger(AuthorizationLevel.Function, "get", Route = null)>]req: HttpRequest) (log: ILogger) =
         async {
             log.LogInformation("Get expenses called")
-
+            
             let account =
                 match req.Query |> HttpRequest.tryGetValues "account" with
-                | Some [| value |] -> value
-                | Some _           -> failwith "Multiple accounts not supported"
-                | _                -> failwith "Missing account name"
+                | Some [| "" |]    -> Error "Missing account name"
+                | Some [| value |] -> Ok value
+                | Some _           -> Error "Multiple accounts not supported"
+                | _                -> Error "Missing account name"
 
             log.LogInformation("Get expenses for account: {account}", account)
                 
             let upn =
                 match req.Cookies.TryGetValue "jwtToken" with
                 | Value t -> JwtToken.getClaim "upn" t |>
-                             Option.defaultWith (fun () -> failwith "Missing upn claim")                      
-                | _       -> failwith "Missing jwtToken cookie"
+                             Option.map Ok |>
+                             Option.defaultValue (Error "Missing upn claim")                      
+                | _       -> Error "Missing jwtToken cookie"
             
             log.LogInformation("Get expenses for upn: {upn}", upn)
             
             let guid =
                 match req.Query |> HttpRequest.tryGetValues "id" with
                 | Some [| value |] -> match Guid.TryParse(value) with
-                                      | Value x -> Some x
-                                      | _       -> failwith "Invalid expense guid"
-                | Some _           -> failwith "Multiple ids not supported"
-                | _                -> None
+                                      | Value x -> Some x |> Ok
+                                      | _       -> Error "Invalid expense guid"
+                | Some _           -> Error "Multiple ids not supported"
+                | _                -> Ok None
 
             log.LogInformation("Get expense for id: {guid}", guid)
             
-            let! resultTask =
-                match guid with
-                | Some idGuid -> ExpenseReader.GetAsync(account, upn, idGuid)
-                | None        -> ExpenseReader.GetAllAsync(account, upn)
+            let toOkResult x =
+                async.Bind(x |> Async.AwaitTask, fun y -> y |> OkObjectResult :> IActionResult |> async.Return)
             
-            return resultTask |> OkObjectResult :> IActionResult
+            let toBadRequestResult (account, upn, id) =
+                [
+                    match account with | Error e -> yield e | _ -> ()
+                    match upn     with | Error e -> yield e | _ -> ()
+                    match id      with | Error e -> yield e | _ -> ()
+                ] |>
+                BadRequestObjectResult :>
+                IActionResult |>
+                async.Return
+            
+            let! resultTask =
+                match account, upn, guid with
+                | Ok account, Ok upn , Ok (Some idGuid) -> ExpenseReader.GetAsync(account, upn, idGuid) |> toOkResult
+                | Ok account, Ok upn , Ok None          -> ExpenseReader.GetAllAsync(account, upn)      |> toOkResult
+                | results                               -> results                                      |> toBadRequestResult
+            
+            return resultTask
         } |>
         Async.StartAsTask

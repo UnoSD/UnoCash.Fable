@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Test-GetExpenses" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/UnoCash.Test/Test-GetExpenses.http">
+    <method v="2" />
+  </configuration>
+</component>
