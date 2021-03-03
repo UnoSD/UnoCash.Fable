@@ -72,6 +72,10 @@ module.exports = (env, options) => {
                 new webpack.NamedModulesPlugin()
             ]),
         devServer: {
+            before: function (app, server, compiler) {
+                app.get('/apibaseurl', function (req, res) {                    
+                    res.send("http://localhost:7071");
+                })},
             contentBase: './static/',
             publicPath: "/",
             port: 8080,

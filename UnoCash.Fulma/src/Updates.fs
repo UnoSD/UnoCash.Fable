@@ -10,14 +10,12 @@ open UnoCash.Fulma.Upload
 open Fetch
 open Fable.Core
 
-let private loadConfig defaultBaseUrl =
-    tryFetch "/apibaseurl" [] |>
-    Promise.bind (fun x -> match x with
-                           | Ok y -> y.text()
-                           | Error _ -> Promise.lift defaultBaseUrl)
+let private loadConfig () =
+    fetch "/apibaseurl" [] |>
+    Promise.bind (fun x -> x.text())
 
 let init _ =
-    emptyModel, Cmd.OfPromise.perform loadConfig emptyModel.ApiBaseUrl SetApiBaseUrl
+    emptyModel, Cmd.OfPromise.perform loadConfig () SetApiBaseUrl
 
 let private loadExpenses (account, apiBaseUrl) =
     promise {

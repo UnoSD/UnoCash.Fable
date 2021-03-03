@@ -69,7 +69,7 @@ type Model =
     
 let emptyModel = 
     {
-        ApiBaseUrl = "http://localhost:7071"
+        ApiBaseUrl = ""
         CurrentTab = AddExpense
         TagsText = ""
         Alert = NoAlert
