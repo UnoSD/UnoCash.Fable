@@ -17,15 +17,15 @@ module GetExpenses =
 
             let account =
                 match req.Query.TryGetValue "account" with
-                | true, a when a.Count = 1 -> a.[0]
-                | true, a when a.Count > 1 -> failwith "Multiple accounts not supported"
+                | Value a when a.Count = 1 -> a.[0]
+                | Value a when a.Count > 1 -> failwith "Multiple accounts not supported"
                 | _                        -> failwith "Missing account name"
 
             log.LogInformation("Get expenses for account: {account}", account)
             
             let upn =
                 match req.Cookies.TryGetValue "jwtToken" with
-                | true, t -> JwtSecurityTokenHandler().ReadJwtToken(t).Claims |>
+                | Value t -> JwtSecurityTokenHandler().ReadJwtToken(t).Claims |>
                              Seq.filter (fun c -> c.Type = "upn") |>
                              Seq.tryExactlyOne |>
                              Option.map (fun u -> u.Value) |>
@@ -36,13 +36,15 @@ module GetExpenses =
             
             let id =
                 match req.Query.TryGetValue "id" with
-                | true, a when a.Count = 1 -> Some a.[0]
-                | true, a when a.Count > 1 -> failwith "Multiple ids not supported"
+                | Value a when a.Count = 1 -> Some a.[0]
+                | Value a when a.Count > 1 -> failwith "Multiple ids not supported"
                 | _                        -> None
             
             let idGuid =
                 id |>
-                Option.bind (fun id -> match Guid.TryParse(id) with | true, x -> Some x | _ -> None)
+                Option.map (fun id -> match Guid.TryParse(id) with
+                                      | Value x -> x
+                                      | _       -> failwith "Invalid expense guid")
 
             log.LogInformation("Get expense for id: {id}", idGuid)
             

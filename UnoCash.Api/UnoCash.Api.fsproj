@@ -3,6 +3,7 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <AzureFunctionsVersion>v3</AzureFunctionsVersion>
         <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+        <FSharpCoreImplicitPackageVersion>5.0.*</FSharpCoreImplicitPackageVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.0" />
@@ -14,7 +15,8 @@
 
         <None Include="host.json" CopyToOutputDirectory="PreserveNewest" />
         <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
-
+        
+        <Compile Include="Option.fs" />
         <Compile Include="GetExpenses.fs" />
     </ItemGroup>
 </Project>
