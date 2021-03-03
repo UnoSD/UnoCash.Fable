@@ -10,7 +10,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F5B95AAE-34C4-4BF7-B102-497DB46D4B4B}"
 ProjectSection(SolutionItems) = preProject
 	build.fsx = build.fsx
-	ApiTest.http = ApiTest.http
 EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnoCash.Dto", "UnoCash.Dto\UnoCash.Dto.csproj", "{9DB777FB-DA79-4FD5-B2D5-2721B509D462}"
@@ -18,6 +17,16 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "UnoCash.Fulma", "UnoCash.Fulma\src\UnoCash.Fulma.fsproj", "{FC09E92F-AAFD-4FED-9827-29CE73FA767F}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnoCash.Pulumi", "UnoCash.Pulumi\UnoCash.Pulumi.fsproj", "{2DBEB983-D013-47F8-971B-537FD8DFC6C2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnoCash.Test", "UnoCash.Test", "{6B4E7F31-1EF2-4392-A99B-E04EB94907CC}"
+ProjectSection(SolutionItems) = preProject
+	UnoCash.Test\AddExpense.http = UnoCash.Test\AddExpense.http
+	UnoCash.Test\DeleteExpense.http = UnoCash.Test\DeleteExpense.http
+	UnoCash.Test\GetExpenses.http = UnoCash.Test\GetExpenses.http
+	UnoCash.Test\GetReceiptData.http = UnoCash.Test\GetReceiptData.http
+	UnoCash.Test\GetReceiptUploadSasToken.http = UnoCash.Test\GetReceiptUploadSasToken.http
+	UnoCash.Test\UpdateExpense.http = UnoCash.Test\UpdateExpense.http
+EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
