@@ -1,16 +1,16 @@
 namespace UnoCash.Api
 
 open System
-open Microsoft.AspNetCore.Mvc
+open UnoCash.Core
 open Microsoft.Azure.WebJobs
-open Microsoft.Azure.WebJobs.Extensions.Http
+open Microsoft.AspNetCore.Mvc
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
-open UnoCash.Core
+open Microsoft.Azure.WebJobs.Extensions.Http
 
 module GetExpenses =
     [<FunctionName("GetExpenses")>]
-    let run ([<HttpTrigger(AuthorizationLevel.Function, "get", Route = null)>]req: HttpRequest) (log: ILogger) =
+    let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (log: ILogger) =
         async {
             log.LogInformation("Get expenses called")
             
@@ -41,26 +41,23 @@ module GetExpenses =
                 | _                -> Ok None
 
             log.LogInformation("Get expense for id: {guid}", guidResult)
+
+            let result =
+                result {
+                    let! account = accountResult
+                    and! upn = upnResult
+                    and! guidResult = guidResult 
+                    
+                    return match guidResult with
+                           | Some guid -> ExpenseReader.GetAsync(account, upn, guid) |> Async.AwaitTask
+                           | None      -> ExpenseReader.GetAllAsync(account, upn)    |> Async.AwaitTask
+                }
             
-            let toOkResult x =
-                async.Bind(x |> Async.AwaitTask, fun y -> y |> OkObjectResult :> IActionResult |> async.Return)
-            
-            let toBadRequestResult (account, upn, id) =
-                [
-                    match account with | Error e -> yield e | _ -> ()
-                    match upn     with | Error e -> yield e | _ -> ()
-                    match id      with | Error e -> yield e | _ -> ()
-                ] |>
-                BadRequestObjectResult :>
-                IActionResult |>
-                async.Return
-            
-            let! resultTask =
-                match accountResult, upnResult, guidResult with
-                | Ok account, Ok upn , Ok (Some idGuid) -> ExpenseReader.GetAsync(account, upn, idGuid) |> toOkResult
-                | Ok account, Ok upn , Ok None          -> ExpenseReader.GetAllAsync(account, upn)      |> toOkResult
-                | results                               -> results                                      |> toBadRequestResult
-            
-            return resultTask
+            return! match result with
+                    | Ok expensesAsync -> async {
+                                              let! expenses = expensesAsync
+                                              return OkObjectResult expenses :> IActionResult
+                                          } 
+                    | Error errors     -> async { return BadRequestObjectResult errors :> IActionResult }
         } |>
         Async.StartAsTask

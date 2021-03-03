@@ -17,7 +17,7 @@
         <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
 
         <Compile Include="Option.fs"/>
-
+        <Compile Include="Result.fs"/>
         <Compile Include="HttpRequest.fs"/>
         <Compile Include="JwtToken.fs"/>
         <Compile Include="GetExpenses.fs"/>
