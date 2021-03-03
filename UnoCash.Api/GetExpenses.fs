@@ -22,17 +22,6 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (l
     async {
         log.LogInformation("Get expenses called")
         
-        let accountResult =
-            {
-                Key      = "account"
-                Value    = Ok
-                Empty    = Error "Missing account name"
-                Missing  = Error "Missing account name"
-                Multiple = Error "Multiple accounts not supported" |> ignoreArg
-            } |> getQueryStringResult req.Query
-        
-        log.LogInformation("Get expenses for account: {account}", accountResult)
-            
         let upnResult =
             result {
                 let! token =
@@ -49,6 +38,17 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (l
             }
         
         log.LogInformation("Get expenses for upn: {upn}", upnResult)
+        
+        let accountResult =
+            {
+                Key      = "account"
+                Value    = Ok
+                Empty    = Error "Missing account name"
+                Missing  = Error "Missing account name"
+                Multiple = Error "Multiple accounts not supported" |> ignoreArg
+            } |> getQueryStringResult req.Query
+        
+        log.LogInformation("Get expenses for account: {account}", accountResult)
         
         let guidResult =
             {
