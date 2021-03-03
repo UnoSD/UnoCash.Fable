@@ -1,6 +1,5 @@
 module UnoCash.Api.GetExpenses
 
-open System
 open UnoCash.Core
 open Microsoft.Azure.WebJobs
 open UnoCash.Api.HttpRequest
@@ -8,14 +7,6 @@ open Microsoft.AspNetCore.Mvc
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
 open Microsoft.Azure.WebJobs.Extensions.Http
-
-let private parseGuid (value : string) =
-    match Guid.TryParse(value) with
-    | Value x -> Some x |> Ok
-    | _       -> Error "Invalid expense guid"
-
-let private ignoreArg y _ =
-    y
 
 [<FunctionName("GetExpenses")>]
 let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (log: ILogger) =
@@ -33,7 +24,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (l
                 Value    = Ok
                 Empty    = Error "Missing account name"
                 Missing  = Error "Missing account name"
-                Multiple = Error "Multiple accounts not supported" |> ignoreArg
+                Multiple = Error "Multiple accounts not supported" |> ignoreSnd
             } |> getQueryStringResult req.Query
         
         log.LogInformation("Get expenses for account: {account}", accountResult)
@@ -41,10 +32,10 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (l
         let guidResult =
             {
                 Key      = "id"
-                Value    = parseGuid
+                Value    = tryParseGuid
                 Empty    = Ok None
                 Missing  = Ok None
-                Multiple = Error "Multiple ids not supported" |> ignoreArg
+                Multiple = Error "Multiple ids not supported" |> ignoreSnd
             } |> getQueryStringResult req.Query
 
         log.LogInformation("Get expense for id: {guid}", guidResult)
