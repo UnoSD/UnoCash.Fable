@@ -23,19 +23,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) (l
         log.LogInformation("Get expenses called")
         
         let upnResult =
-            result {
-                let! token =
-                    match tryGetCookie "jwtToken" req.Cookies with
-                    | Some t -> Ok t
-                    | None   -> Error "Missing jwtToken cookie"
-                    
-                let! claim =
-                    match JwtToken.tryGetClaim "upn" token with
-                    | Some c -> Ok c
-                    | None   -> Error "Missing upn claim"
-                    
-                return claim 
-            }
+            JwtToken.tryGetUpn req.Cookies
         
         log.LogInformation("Get expenses for upn: {upn}", upnResult)
         
