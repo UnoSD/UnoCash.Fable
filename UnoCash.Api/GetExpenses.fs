@@ -14,25 +14,25 @@ module GetExpenses =
         async {
             log.LogInformation("Get expenses called")
             
-            let account =
+            let accountResult =
                 match req.Query |> HttpRequest.tryGetValues "account" with
                 | Some [| "" |]    -> Error "Missing account name"
                 | Some [| value |] -> Ok value
                 | Some _           -> Error "Multiple accounts not supported"
                 | _                -> Error "Missing account name"
 
-            log.LogInformation("Get expenses for account: {account}", account)
+            log.LogInformation("Get expenses for account: {account}", accountResult)
                 
-            let upn =
+            let upnResult =
                 match req.Cookies.TryGetValue "jwtToken" with
                 | Value t -> JwtToken.getClaim "upn" t |>
                              Option.map Ok |>
                              Option.defaultValue (Error "Missing upn claim")                      
                 | _       -> Error "Missing jwtToken cookie"
             
-            log.LogInformation("Get expenses for upn: {upn}", upn)
+            log.LogInformation("Get expenses for upn: {upn}", upnResult)
             
-            let guid =
+            let guidResult =
                 match req.Query |> HttpRequest.tryGetValues "id" with
                 | Some [| value |] -> match Guid.TryParse(value) with
                                       | Value x -> Some x |> Ok
@@ -40,7 +40,7 @@ module GetExpenses =
                 | Some _           -> Error "Multiple ids not supported"
                 | _                -> Ok None
 
-            log.LogInformation("Get expense for id: {guid}", guid)
+            log.LogInformation("Get expense for id: {guid}", guidResult)
             
             let toOkResult x =
                 async.Bind(x |> Async.AwaitTask, fun y -> y |> OkObjectResult :> IActionResult |> async.Return)
@@ -56,7 +56,7 @@ module GetExpenses =
                 async.Return
             
             let! resultTask =
-                match account, upn, guid with
+                match accountResult, upnResult, guidResult with
                 | Ok account, Ok upn , Ok (Some idGuid) -> ExpenseReader.GetAsync(account, upn, idGuid) |> toOkResult
                 | Ok account, Ok upn , Ok None          -> ExpenseReader.GetAllAsync(account, upn)      |> toOkResult
                 | results                               -> results                                      |> toBadRequestResult
