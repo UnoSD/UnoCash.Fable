@@ -22,6 +22,8 @@
         <Compile Include="Result.fs"/>
         <Compile Include="HttpRequest.fs"/>
         <Compile Include="JwtToken.fs"/>
+        <Compile Include="Function.fs"/>
+        <Compile Include="AddExpense.fs"/>
         <Compile Include="GetExpenses.fs"/>
     </ItemGroup>
 </Project>
