@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="UnoCash.Fulma" type="RunNativeExe" factoryName="Native Executable">
+    <option name="EXE_PATH" value="/usr/bin/dotnet" />
+    <option name="PROGRAM_PARAMETERS" value="fake run build.fsx -t WatchFable" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="PASS_PARENT_ENVS" value="1" />
+    <option name="USE_EXTERNAL_CONSOLE" value="0" />
+    <method v="2">
+      <option name="Build" default="false" projectName="UnoCash.Fulma" projectPath="$PROJECT_DIR$/UnoCash.Fulma/src/UnoCash.Fulma.fsproj" />
+    </method>
+  </configuration>
+</component>

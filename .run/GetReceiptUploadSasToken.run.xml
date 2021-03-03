@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GetReceiptUploadSasToken" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/UnoCash.Test/ApiTest.http" index="4" runType="Run single request">
+    <method v="2" />
+  </configuration>
+</component>
