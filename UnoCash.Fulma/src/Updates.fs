@@ -7,6 +7,7 @@ open UnoCash.Fulma.Messages
 open UnoCash.Fulma.Helpers
 open UnoCash.Fulma.Config
 open UnoCash.Fulma.Upload
+open UnoCash.Fulma.Export
 open Fetch
 open Fable.Core
 
@@ -125,6 +126,9 @@ let fileUploadCmd blob name length apiBaseUrl =
 let receiptParseCmd blobName apiBaseUrl =
     Cmd.OfPromise.perform receiptParse (blobName, apiBaseUrl) (fun result -> ShowParsedExpense result)
 
+let expensesExportCmd expenses =
+    Cmd.OfPromise.perform exportExpenses expenses (fun _ -> ChangeToTab ShowExpenses)
+
 let update message model =
     match message with
     | SetApiBaseUrl apiHost     -> { model with ApiBaseUrl = apiHost }, Cmd.none
@@ -171,3 +175,5 @@ let update message model =
                                              CurrentTab = Tab.EditExpense }, Cmd.none
     
     | ChangePieChartIndex ix -> { model with PieChartIndex = ix }, Cmd.none
+    
+    | ExportExpenses         -> model, expensesExportCmd model.Expenses

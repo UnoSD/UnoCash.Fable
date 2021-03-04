@@ -128,6 +128,7 @@ let private totals expenses =
 
 let private topBox model dispatch =
     Box.box' [] [ dropdownWithEvent "Account" model.Accounts model.ShowAccount ChangeShowAccount dispatch
+                  Button.button [ Button.Option.OnClick (fun _ -> dispatch ExportExpenses) ] [ str "Export..." ]
                   totals model.Expenses ]
 
 let showExpensesCard model dispatch =
