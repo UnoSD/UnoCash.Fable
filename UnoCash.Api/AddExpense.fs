@@ -3,6 +3,7 @@ module UnoCash.Api.AddExpenses
 open System.IO
 open Microsoft.AspNetCore.Mvc
 open UnoCash.Core
+open UnoCash.Dto
 open UnoCash.Api.Function
 open Microsoft.Azure.WebJobs
 open Microsoft.AspNetCore.Http

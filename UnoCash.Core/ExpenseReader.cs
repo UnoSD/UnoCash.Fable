@@ -1,4 +1,5 @@
 ﻿using System;
+using UnoCash.Dto;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos.Table;
@@ -17,16 +18,16 @@ namespace UnoCash.Core
 
         static Expense ToExpense(this DynamicTableEntity expense) =>
             new Expense
-            {
-                Id = Guid.Parse(expense.RowKey),
-                Account = expense.Properties[nameof(Expense.Account)].StringValue,
-                Payee = expense.Properties[nameof(Expense.Payee)].StringValue,
-                Description = expense.Properties[nameof(Expense.Description)].StringValue,
-                Status = expense.Properties[nameof(Expense.Status)].StringValue,
-                Type = expense.Properties[nameof(Expense.Type)].StringValue,
-                Date = expense.Properties[nameof(Expense.Date)].DateTime ?? throw new Exception(),
-                Amount = expense.Properties[nameof(Expense.Amount)].Int64Value / 100m ?? throw new Exception(),
-                Tags = expense[nameof(Expense.Tags)].StringValue
-            };
+            (
+                id         : Guid.Parse(expense.RowKey),
+                account    : expense.Properties[nameof(Expense.Account)].StringValue,
+                payee      : expense.Properties[nameof(Expense.Payee)].StringValue,
+                description: expense.Properties[nameof(Expense.Description)].StringValue,
+                status     : expense.Properties[nameof(Expense.Status)].StringValue,
+                type       : expense.Properties[nameof(Expense.Type)].StringValue,
+                date       : expense.Properties[nameof(Expense.Date)].DateTime ?? throw new Exception(),
+                amount     : expense.Properties[nameof(Expense.Amount)].Int64Value / 100m ?? throw new Exception(),
+                tags       : expense[nameof(Expense.Tags)].StringValue
+            );
     }
 }
