@@ -29,7 +29,8 @@
         <Compile Include="GetExpenses.fs"/>
         <Compile Include="DeleteExpense.fs"/>
         <Compile Include="GetReceiptUploadSasToken.fs"/>
-        
+        <Compile Include="GetReceiptData.fs"/>
+
         <None Include="Main.fs"/>
     </ItemGroup>
 </Project>

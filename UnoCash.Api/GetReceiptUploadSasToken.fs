@@ -33,6 +33,6 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
             
         req.HttpContext.Response.Headers.Add("blobName", cloudBlob.Name |> StringValues)
             
-        return $"{cloudBlob.Uri}/{sas}" |> Ok
+        return $"{cloudBlob.Uri}{sas}" |> Ok
     } |>
     runAsync'
