@@ -15,6 +15,12 @@ let runAsync (result : Result<Async<'a>,string list>) =
     } |>
     Async.StartAsTask
     
+let runAsync' result =
+    async.Bind(result, (Result.map (async.Return)) >>
+                       runAsync >>
+                       (fun x -> x.AsAsync())) |>
+    Async.StartAsTask
+    
 let toActionResult falseMessage (boolTask : Task<bool>) =
     async {
         let! success = boolTask
