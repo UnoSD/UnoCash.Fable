@@ -32,6 +32,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest)
             getQueryStringResult req.Query
         
         return ExpenseWriter.DeleteAsync(account, upn, guid) |>
-               toActionResultWithError "Error occurred while deleting the expense"
+               mapBoolTaskToActionResult (OkResult())
+                                         (UnprocessableEntityObjectResult "Error occurred while deleting the expense")
     } |>
     runAsync''

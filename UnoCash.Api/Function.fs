@@ -21,17 +21,21 @@ let runAsync' result =
                        (fun x -> x.AsAsync())) |>
     Async.StartAsTask
     
-let toActionResultWithError falseMessage (boolTask : Task<bool>) =
+let mapBoolTask ifTrue ifFalse (task : Task<bool>) =
     async {
-        let! success = boolTask
+        let! success =
+            task
         
         let result =
             match success with
-            | true  -> OkResult() :> IActionResult
-            | false -> [ falseMessage ] |> BadRequestObjectResult :> IActionResult
+            | true  -> ifTrue
+            | false -> ifFalse
             
         return result
     }
+    
+let mapBoolTaskToActionResult ifTrue ifFalse =
+    mapBoolTask (ifTrue :> IActionResult) (ifFalse :> IActionResult)
     
 let runAsync'' result =
     result |>

@@ -1,6 +1,7 @@
 module UnoCash.Api.AddExpenses
 
 open System.IO
+open Microsoft.AspNetCore.Mvc
 open UnoCash.Core
 open UnoCash.Api.Function
 open Microsoft.Azure.WebJobs
@@ -18,6 +19,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
             Json.tryResult<Expense> (reader.ReadToEnd())
         
         return ExpenseWriter.WriteAsync(expense, upn) |>
-               toActionResultWithError "Error occurred while writing the expense"
+               mapBoolTaskToActionResult (OkResult())
+                                         (UnprocessableEntityObjectResult "Error occurred while writing the expense")
     } |>
     runAsync''
