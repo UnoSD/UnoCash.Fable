@@ -21,7 +21,7 @@ let runAsync' result =
                        (fun x -> x.AsAsync())) |>
     Async.StartAsTask
     
-let toActionResult falseMessage (boolTask : Task<bool>) =
+let toActionResultWithError falseMessage (boolTask : Task<bool>) =
     async {
         let! success = boolTask
         
@@ -32,3 +32,9 @@ let toActionResult falseMessage (boolTask : Task<bool>) =
             
         return result
     }
+    
+let runAsync'' result =
+    result |>
+    Result.mapError (box >> BadRequestObjectResult >> unbox<IActionResult> >> async.Return) |>
+    (function | Ok x | Error x -> x) |>
+    Async.StartAsTask

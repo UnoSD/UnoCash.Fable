@@ -35,7 +35,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest)
             return (account, upn, guid)
         } |>
         function
-        | Ok args      -> ExpenseWriter.DeleteAsync args |> toActionResult "Error occurred while deleting the expense"
+        | Ok args      -> ExpenseWriter.DeleteAsync args |> toActionResultWithError "Error occurred while deleting the expense"
         | Error errors -> errors |> BadRequestObjectResult :> IActionResult |> async.Return
         
     asyncActionResult |> Async.StartAsTask

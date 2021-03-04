@@ -17,3 +17,8 @@ let tryParse<'a> text =
     match success with
     | true  -> Some result
     | false -> None
+    
+let tryResult<'a> text =
+    match tryParse<'a> text with
+    | Some e -> Ok e
+    | None   -> Error "Unable to deserialize JSON body"
