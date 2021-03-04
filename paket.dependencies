@@ -18,3 +18,5 @@ group netcorebuild
     nuget Fake.IO.Zip
     nuget Fake.Tools.Git
     nuget Fake.JavaScript.Yarn
+
+    nuget Microsoft.Identity.Client

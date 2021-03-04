@@ -265,17 +265,25 @@ let infra() =
             }
         }
     
+    let tenantId =
+        output {
+            let! config =
+                AzureAD.GetClientConfig.InvokeAsync()
+                
+            return config.TenantId
+        }
+    
     let policyFromFile fileName =
         output {
             let! appId =
                 spaAdApplication.ApplicationId
             
-            let! config =
-                AzureAD.GetClientConfig.InvokeAsync()
+            let! tenantId =
+                tenantId
             
             let policy =
                 String.Format(File.ReadAllText(fileName),
-                              config.TenantId,
+                              tenantId,
                               appId)
             
             return policy
@@ -480,6 +488,9 @@ let infra() =
             return expiry.ToString("u")
         }
     
+    let getExpensesUrl =
+        Output.Format($"https://{app.DefaultHostname}/api/GetExpenses?account=Current&code={masterKey}")
+    
     dict [
         "IsFirstRun",              isFirstRun                      :> obj
         "Hostname",                app.DefaultHostname             :> obj
@@ -491,7 +502,9 @@ let infra() =
         "StaticWebsiteApi",        swApi.Name                      :> obj
         "FunctionApi",             apiFunction.Name                :> obj
         "ApplicationId",           spaAdApplication.ApplicationId  :> obj
+        "TenantId",                tenantId                        :> obj
         "FunctionName",            app.Name                        :> obj
+        "GetExpensesUrl",          getExpensesUrl                  :> obj
                                                                               
         // Outputs to read on next deployment to check for changes            
         sasTokenOutputName,        token.Apply fst                 :> obj

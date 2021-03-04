@@ -10,6 +10,8 @@ open Fake.IO
 open Fake.IO.Globbing.Operators
 open Fake.JavaScript
 open Newtonsoft.Json.Linq
+open Microsoft.Identity.Client
+open Fake.Net
 
 // Install pulumi/az cli/yarn
 
@@ -133,6 +135,39 @@ Target.create "PulumiUp" (fun _ ->
     | _          -> Pulumi.up(); Pulumi.up()
 )
 
+Target.create "BackupData" (fun _ ->
+    let codeRequest (dcr : DeviceCodeResult) =
+        printfn "%s https://aka.ms/devicelogin" dcr.UserCode
+        System.Threading.Tasks.Task.CompletedTask
+    
+    let appId =
+        Pulumi.tryGetStackOutput "ApplicationId" false |>
+        Option.defaultWith (fun _ -> failwith "Cannot find application ID")
+
+    let tenantId =
+        Pulumi.tryGetStackOutput "TenantId" false |>
+        Option.defaultWith (fun _ -> failwith "Cannot find tenant ID")
+        
+    let url =
+        Pulumi.tryGetStackOutput "GetExpensesUrl" false |>
+        Option.defaultWith (fun _ -> failwith "Cannot find expenses URL")
+
+    let idToken =
+        PublicClientApplicationBuilder.Create(appId)
+                                      .WithTenantId(tenantId)
+                                      .Build()
+                                      .AcquireTokenWithDeviceCode([], fun x -> codeRequest x)
+                                      .ExecuteAsync()
+                                      .Result
+                                      .IdToken
+
+    let response =
+        Http.getWithHeaders "" "" (fun headers -> headers.Add("Cookie", "jwtToken=" + idToken)) url |>
+        snd
+    
+    File.writeString false "backup.json" response
+)
+
 Target.create "PulumiDestroy" (fun _ ->
     Pulumi.destroy()
 )
@@ -177,5 +212,8 @@ Target.create "Deploy" ignore
     //==> "PulumiUp"
     =?> ("UpdateDevelopmentApiLocalSettings", BuildServer.isLocalBuild)
     ==> "Deploy"
+
+"BackupData"
+    ==> "PulumiDestroy"
 
 Target.runOrDefault "PublishFable"
