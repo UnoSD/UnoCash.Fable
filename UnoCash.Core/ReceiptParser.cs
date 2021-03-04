@@ -87,11 +87,12 @@ namespace UnoCash.Core
 
         static Receipt ToReceipt(this IReadOnlyDictionary<string, UnoCashFormField> fields) =>
             new Receipt
-            {
-                Payee  = fields.GetOrDefault<string>("MerchantName"),
-                Date   = fields.GetOrDefault("TransactionDate", DateTime.Today),
-                Amount = fields.GetOrDefault<decimal>("Total")
-            };
+            (
+                payee : fields.GetOrDefault<string>("MerchantName"),
+                date  : fields.GetOrDefault("TransactionDate", DateTime.Today),
+                method: "Cash",
+                amount: fields.GetOrDefault<decimal>("Total")
+            );
 
         static T GetOrDefault<T>(
             this IReadOnlyDictionary<string, UnoCashFormField> dict,
