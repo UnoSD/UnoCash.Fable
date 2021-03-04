@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UnoCash.Dto\UnoCash.Dto.csproj" />
+    <ProjectReference Include="..\UnoCash.Dto.Legacy\UnoCash.Dto.Legacy.csproj" />
   </ItemGroup>
 
 </Project>

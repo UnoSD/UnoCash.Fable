@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29021.104
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnoCash.Core", "UnoCash.Core\UnoCash.Core.csproj", "{0B027628-02A3-4B20-AE94-E3065105D443}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnoCash.Dto", "UnoCash.Dto\UnoCash.Dto.csproj", "{9DB777FB-DA79-4FD5-B2D5-2721B509D462}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnoCash.Dto.Legacy", "UnoCash.Dto.Legacy\UnoCash.Dto.Legacy.csproj", "{9DB777FB-DA79-4FD5-B2D5-2721B509D462}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "UnoCash.Fulma", "UnoCash.Fulma\src\UnoCash.Fulma.fsproj", "{FC09E92F-AAFD-4FED-9827-29CE73FA767F}"
 EndProject
