@@ -13,13 +13,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
         let! upn = 
             JwtToken.tryGetUpn req.Cookies
         and! account =
-            {
-                Key      = "account"
-                Value    = Ok
-                Empty    = Error "Missing account name"
-                Missing  = Error "Missing account name"
-                Multiple = Error "Multiple accounts not supported" |> ignoreSnd
-            } |> getQueryStringResult req.Query
+            ExpenseRequest.tryGetAccount req.Query
         and! guidOption =
             {
                 Key      = "id"

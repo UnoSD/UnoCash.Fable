@@ -1,5 +1,6 @@
 module UnoCash.Api.Function
 
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Mvc
 
 let runAsync (result : Result<Async<'a>,string list>) =
@@ -13,3 +14,15 @@ let runAsync (result : Result<Async<'a>,string list>) =
         return! response
     } |>
     Async.StartAsTask
+    
+let toActionResult falseMessage (boolTask : Task<bool>) =
+    async {
+        let! success = boolTask
+        
+        let result =
+            match success with
+            | true  -> OkResult() :> IActionResult
+            | false -> [ falseMessage ] |> BadRequestObjectResult :> IActionResult
+            
+        return result
+    }
