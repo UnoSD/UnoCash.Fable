@@ -16,7 +16,7 @@
 
       <Compile Include="Configuration.fs" />
       <Compile Include="Storage.fs" />
-      <Compile Include="AzureTableHelpers.fs" />
+      <Compile Include="Table.fs" />
       <Compile Include="ExpenseWriter.fs" />
       <Compile Include="ExpenseReader.fs" />
     </ItemGroup>

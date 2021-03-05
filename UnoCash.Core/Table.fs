@@ -1,4 +1,4 @@
-module UnoCash.Core.AzureTableHelpers
+module UnoCash.Core.Table
 
 open System
 open UnoCash.Dto
