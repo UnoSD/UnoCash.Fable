@@ -4,20 +4,7 @@ open System
 open UnoCash.Dto
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
-
-let private disallowedKeyFieldsChars =
-    lazy([|
-        '/'; '\\'; '#'; '?'
-        yield! [ 0x0 .. 0x1F ] @ [ 0x7F .. 0x9F ] |> List.map Convert.ToChar
-    |])
-
-let private formatTableKey text =
-    String.split disallowedKeyFieldsChars.Value text |>
-    String.join
-
-let private partitionKey upn account =
-    upn + account |>
-    formatTableKey
+open UnoCash.Core.AzureTableHelpers
 
 let writeAsync upn expense =
     let getSetting name =
