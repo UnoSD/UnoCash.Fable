@@ -23,11 +23,11 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
                 Multiple = Error "Multiple ids not supported" |> ignoreSnd
             } |> getQueryStringResult req.Query 
         
-        let task =
+        let expensesAsync =
             match guidOption with
-            | Some guid -> ExpenseReader.GetAsync(account, upn, guid) |> Async.AwaitTask
-            | None      -> ExpenseReader.GetAllAsync(account, upn)    |> Async.AwaitTask
+            | Some guid -> ExpenseReader.get upn account guid
+            | None      -> ExpenseReader.getAll upn account
         
-        return task
+        return expensesAsync
     } |>
     runAsync

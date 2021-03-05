@@ -12,13 +12,13 @@
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0"/>
 
         <ProjectReference Include="..\UnoCash.Core.Legacy\UnoCash.Core.Legacy.csproj"/>
+        <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.fsproj"/>
 
         <None Include="host.json" CopyToOutputDirectory="PreserveNewest"/>
         <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
 
         <Compile Include="Option.fs"/>
         <Compile Include="Core.fs"/>
-        <Compile Include="Async.fs"/>
         <Compile Include="Result.fs"/>
         <Compile Include="Json.fs"/>
         <Compile Include="HttpRequest.fs"/>

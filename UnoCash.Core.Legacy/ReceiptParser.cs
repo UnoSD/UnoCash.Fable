@@ -8,7 +8,6 @@ using Azure.AI.FormRecognizer;
 using Microsoft.Azure.Storage.Blob;
 using UnoCash.Dto;
 using CloudStorageAccount = Microsoft.Azure.Storage.CloudStorageAccount;
-using static UnoCash.Core.ConfigurationKeys;
 
 namespace UnoCash.Core
 {
@@ -17,7 +16,7 @@ namespace UnoCash.Core
         public static async Task<Receipt> ParseAsync(string blobName)
         {
             var container =
-                await GetReceiptsContainer().ConfigureAwait(false);
+                GetReceiptsContainer();
 
             var cachedResultsBlob =
                 container.GetBlockBlobReference(blobName + ".json");
@@ -40,12 +39,10 @@ namespace UnoCash.Core
                 container.GetBlobReference(blobName);
 
             var endpoint =
-                await ConfigurationReader.GetAsync("FormRecognizerEndpoint")
-                                         .ConfigureAwait(false);
+                Environment.GetEnvironmentVariable("FormRecognizerEndpoint");
 
             var formRecognizerKey =
-                await SecretReader.GetAsync("FormRecognizerKey")
-                                  .ConfigureAwait(false);
+                Environment.GetEnvironmentVariable("FormRecognizerKey");
 
             var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy
             {
@@ -55,8 +52,8 @@ namespace UnoCash.Core
 
             var blobUrl = blob.Uri + sas;
 
-            var credential = new AzureKeyCredential(formRecognizerKey);
-            var formRecognizerClient = new FormRecognizerClient(new Uri(endpoint), credential);
+            var credential = new AzureKeyCredential(formRecognizerKey!);
+            var formRecognizerClient = new FormRecognizerClient(new Uri(endpoint!), credential);
 
             var request =
                 await formRecognizerClient.StartRecognizeReceiptsFromUriAsync(new Uri(blobUrl))
@@ -79,11 +76,10 @@ namespace UnoCash.Core
             return JsonSerializer.Deserialize<Dictionary<string, UnoCashFormField>>(json).ToReceipt();
         }
 
-        static Task<CloudBlobContainer> GetReceiptsContainer() =>
-            ConfigurationReader.GetAsync(StorageAccountConnectionString)
-                               .Map(CloudStorageAccount.Parse)
-                               .Map(client => client.CreateCloudBlobClient()
-                                                    .GetContainerReference("receipts"));
+        static CloudBlobContainer GetReceiptsContainer() =>
+                CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("StorageAccountConnectionString"))
+                                   .CreateCloudBlobClient()
+                                   .GetContainerReference("receipts");
 
         static Receipt ToReceipt(this IReadOnlyDictionary<string, UnoCashFormField> fields) =>
             new Receipt

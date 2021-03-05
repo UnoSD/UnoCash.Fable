@@ -1,7 +1,6 @@
 module UnoCash.Api.AddExpenses
 
 open System.IO
-open Microsoft.AspNetCore.Mvc
 open UnoCash.Core
 open UnoCash.Dto
 open UnoCash.Api.Function
@@ -18,9 +17,9 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
             JwtToken.tryGetUpn req.Cookies
         and! expense =            
             Json.tryResult<Expense> (reader.ReadToEnd())
-        
-        return ExpenseWriter.WriteAsync(expense, upn) |>
-               mapBoolTaskToActionResult (OkResult())
-                                         (UnprocessableEntityObjectResult "Error occurred while writing the expense")
+                
+        return ExpenseWriter.writeAsync upn expense |> 
+               mapHttpResult (ignoreSnd "" >> Ok)
+                             (sprintf "Error %i occurred while writing the expense" >> Error)
     } |>
-    runAsync''
+    runFlattenAsync 

@@ -4,7 +4,6 @@ open System
 open Microsoft.Extensions.Primitives
 open Microsoft.WindowsAzure.Storage
 open Microsoft.WindowsAzure.Storage.Blob
-open UnoCash.Core
 open Microsoft.Azure.WebJobs
 open UnoCash.Api.Function
 open Microsoft.AspNetCore.Http
@@ -13,9 +12,8 @@ open Microsoft.Azure.WebJobs.Extensions.Http
 [<FunctionName("GetReceiptUploadSasToken")>]
 let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
     async {
-        let! connectionString =
-            ConfigurationKeys.StorageAccountConnectionString |>
-            ConfigurationReader.GetAsync
+        let connectionString =
+            Environment.GetEnvironmentVariable("StorageAccountConnectionString")
             
         let cloudBlob =
             Guid.NewGuid().ToString("N") |>

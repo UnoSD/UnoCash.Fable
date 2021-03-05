@@ -4,7 +4,7 @@ open System
 
 type Expense =
     {
-        Amount      : decimal 
+        Amount      : float 
         Payee       : string  
         Description : string  
         Date        : DateTime

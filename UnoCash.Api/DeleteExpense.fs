@@ -1,18 +1,11 @@
 module UnoCash.Api.DeleteExpense
 
-open Microsoft.AspNetCore.Mvc
 open Microsoft.Azure.WebJobs
 open UnoCash.Api.HttpRequest
 open UnoCash.Api.Function
 open Microsoft.AspNetCore.Http
 open Microsoft.Azure.WebJobs.Extensions.Http
 open UnoCash.Core
-
-let private tryParseRequiredGuid =
-    tryParseGuid >>
-    Result.bind (function
-                 | Some guid -> Ok guid
-                 | None      -> Error "Invalid guid")
 
 [<FunctionName("DeleteExpense")>]
 let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest) =
@@ -31,8 +24,8 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest)
             } |>
             getQueryStringResult req.Query
         
-        return ExpenseWriter.DeleteAsync(account, upn, guid) |>
-               mapBoolTaskToActionResult (OkResult())
-                                         (UnprocessableEntityObjectResult "Error occurred while deleting the expense")
+        return ExpenseWriter.deleteAsync upn account guid |> 
+               mapHttpResult (sprintf "%s" >> Ok)
+                             (sprintf "Error %i occurred while deleting the expense" >> Error)
     } |>
-    runAsync''
+    runFlattenAsync
