@@ -2,6 +2,7 @@ module UnoCash.Core.AzureTableHelpers
 
 open System
 open UnoCash.Dto
+open UnoCash.Core
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
 
@@ -19,21 +20,16 @@ let partitionKey upn account =
     upn + account |>
     formatTableKey
     
-let getConnectionString () =
-    let getSetting name =
-        Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process)                |> Option.ofObj  |>
-        Option.orElse (Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.User)    |> Option.ofObj) |>
-        Option.orElse (Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Machine) |> Option.ofObj) |>
-        Option.defaultWith (fun () -> failwith "")
-        
-    getSetting "StorageAccountConnectionString"
+let tableClient =
+    lazy(
+        Configuration.tryGetSetting Configuration.Keys.StorageAccountConnectionString |>
+        Option.defaultWith (fun _ -> failwith "Missing connection string in configuration") |>
+        CloudStorageAccount.Parse |>
+        (fun x -> x.CreateCloudTableClient())
+    )
 
-let getCloudTable () =
-    let csa = getConnectionString () |> CloudStorageAccount.Parse
-    csa.CreateCloudTableClient()
-
-let getTable<'a, 'b> (operation : CloudTableClient -> string -> Operation<'b> -> Async<OperationResult>) =
-    operation (getCloudTable()) (typeof<'a>.Name)
+let getTable<'a, 'b, 'c> (operation : CloudTableClient -> string -> 'b -> Async<'c>) =
+    operation tableClient.Value (typeof<'a>.Name)
 
 let getTableEntityId upn (expense : Expense) =
     { 
@@ -44,4 +40,10 @@ let getTableEntityId upn (expense : Expense) =
 let inExpensesTable<'a> upn =
     EntityIdentiferReader<Expense>.GetIdentifier <- (getTableEntityId upn)
 
-    getTable<Expense, 'a> inTableAsync
+    getTable<Expense, Operation<'a>, OperationResult> inTableAsync
+    
+let fromExpensesTable upn =
+    EntityIdentiferReader.GetIdentifier <- (getTableEntityId upn)
+
+    getTable<Expense, EntityQuery<Expense>, seq<Expense * EntityMetadata>> fromTableAsync >>
+    Async.map (Seq.map fst)

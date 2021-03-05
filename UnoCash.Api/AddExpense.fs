@@ -18,7 +18,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
         and! expense =            
             Json.tryResult<Expense> (reader.ReadToEnd())
                 
-        return ExpenseWriter.getTableEntityId upn expense |> 
+        return ExpenseWriter.writeAsync upn expense |> 
                mapHttpResult (ignoreSnd "" >> Ok)
                              (sprintf "Error %i occurred while writing the expense" >> Error)
     } |>
