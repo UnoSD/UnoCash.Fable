@@ -2,9 +2,9 @@ module UnoCash.Core.AzureTableHelpers
 
 open System
 open UnoCash.Dto
+open UnoCash.Core.Storage
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
-open UnoCash.Core.AzureStorageHelpers
 
 let private disallowedKeyFieldsChars =
     lazy([|
@@ -19,9 +19,6 @@ let private formatTableKey text =
 let partitionKey upn account =
     upn + account |>
     formatTableKey
-
-let private tableClient =
-    lazy(cloudStorageAccount.Value.CreateCloudTableClient())
 
 let private getTable<'a, 'b, 'c> (operation : CloudTableClient -> string -> 'b -> Async<'c>) =
     operation tableClient.Value (typeof<'a>.Name)
