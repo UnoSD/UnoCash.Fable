@@ -2,9 +2,9 @@ module UnoCash.Core.AzureTableHelpers
 
 open System
 open UnoCash.Dto
-open UnoCash.Core
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
+open UnoCash.Core.AzureStorageHelpers
 
 let private disallowedKeyFieldsChars =
     lazy([|
@@ -19,19 +19,14 @@ let private formatTableKey text =
 let partitionKey upn account =
     upn + account |>
     formatTableKey
-    
-let tableClient =
-    lazy(
-        Configuration.tryGetSetting Configuration.Keys.StorageAccountConnectionString |>
-        Option.defaultWith (fun _ -> failwith "Missing connection string in configuration") |>
-        CloudStorageAccount.Parse |>
-        (fun x -> x.CreateCloudTableClient())
-    )
 
-let getTable<'a, 'b, 'c> (operation : CloudTableClient -> string -> 'b -> Async<'c>) =
+let private tableClient =
+    lazy(cloudStorageAccount.Value.CreateCloudTableClient())
+
+let private getTable<'a, 'b, 'c> (operation : CloudTableClient -> string -> 'b -> Async<'c>) =
     operation tableClient.Value (typeof<'a>.Name)
 
-let getTableEntityId upn (expense : Expense) =
+let private getTableEntityId upn (expense : Expense) =
     { 
         PartitionKey = partitionKey upn expense.Account
         RowKey       = expense.Id.ToString()
