@@ -1,0 +1,5 @@
+config:
+  UnoCash.Pulumi:ApiBuild: ../UnoCash.Api/bin/Release/netcoreapp3.1/publish
+  UnoCash.Pulumi:FormRecognizerEndpoint:
+  UnoCash.Pulumi:FormRecognizerKey:
+  azure:location: West Europe
