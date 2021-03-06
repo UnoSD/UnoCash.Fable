@@ -74,63 +74,63 @@ let private renderActiveShape (data: IPolarProps) =
         my
 
     let textAnchor =
-        if cos >= 0. then prop.textAnchor.startOfText else prop.textAnchor.endOfText
+        if cos >= 0. then svg.textAnchor.startOfText else svg.textAnchor.endOfText
 
-    Html.g
-        [ Html.text
-            [ prop.x data.cx
-              prop.y data.cy
-              prop.textAnchor.middle
-              Interop.mkAttr "fill" data.fill
-              prop.dy 8
-              prop.children [ str data.payload.name ] ]
-
-          Recharts.sector
-              [ prop.cx data.cx
-                prop.cy data.cy
-
-                pie.startAngle data.startAngle
-                pie.endAngle data.endAngle
-                pie.innerRadius data.innerRadius
-                pie.outerRadius data.outerRadius
-                Interop.mkAttr "fill" "#444" ]
+    Svg.g
+        [ Svg.text
+              [ svg.cx data.cx
+                svg.y data.cy
+                svg.textAnchor.middle
+                svg.fill data.fill
+                svg.dy 8
+                svg.children [ str data.payload.name ] ]
 
           Recharts.sector
-              [ prop.cx data.cx
-                prop.cy data.cy
+              [ prop.cx data.cx |> unbox<ISectorProperty>
+                prop.cy data.cy |> unbox<ISectorProperty>
 
-                pie.startAngle data.startAngle
-                pie.endAngle data.endAngle
-                pie.innerRadius (data.outerRadius + 6.)
-                pie.outerRadius (data.outerRadius + 10.)
-                Interop.mkAttr "fill" "#222" ]
+                pie.startAngle data.startAngle    |> unbox<ISectorProperty>
+                pie.endAngle data.endAngle        |> unbox<ISectorProperty>
+                pie.innerRadius data.innerRadius  |> unbox<ISectorProperty>
+                pie.outerRadius data.outerRadius  |> unbox<ISectorProperty>
+                Interop.mkAttr "fill" "#444"      |> unbox<ISectorProperty> ]    
 
-          Html.path
-              [ prop.d (sprintf "M%f,%fL%f,%fL%f,%f" sx sy mx my ex ey)
-                prop.stroke data.fill
-                Interop.mkAttr "fill" "none" ]
+          Recharts.sector
+              [ prop.cx data.cx                          |> unbox<ISectorProperty> 
+                prop.cy data.cy                          |> unbox<ISectorProperty> 
+                                                         |> unbox<ISectorProperty> 
+                pie.startAngle data.startAngle           |> unbox<ISectorProperty> 
+                pie.endAngle data.endAngle               |> unbox<ISectorProperty> 
+                pie.innerRadius (data.outerRadius + 6.)  |> unbox<ISectorProperty> 
+                pie.outerRadius (data.outerRadius + 10.) |> unbox<ISectorProperty> 
+                Interop.mkAttr "fill" "#222"             |> unbox<ISectorProperty> ]
 
-          Html.circle
-              [ prop.cx ex
-                prop.cy ey
-                prop.r 2
-                Interop.mkAttr "fill" data.fill
-                prop.stroke "none" ]
+          Svg.path
+              [ svg.d (sprintf "M%f,%fL%f,%fL%f,%f" sx sy mx my ex ey)
+                svg.stroke data.fill
+                svg.fill "none" ]
 
-          Html.text
-              [ prop.x (ex + (if cos >= 0. then 1. else -1.0) * 12.)
-                prop.y ey
+          Svg.circle
+              [ svg.cx ex
+                svg.cy ey
+                svg.r 2
+                svg.fill data.fill
+                svg.stroke "none" ]
+
+          Svg.text
+              [ svg.x (ex + (if cos >= 0. then 1. else -1.0) * 12.)
+                svg.y ey
                 textAnchor
-                Interop.mkAttr "fill" "#333"
-                prop.children [ str (sprintf "£%.0f" data.value) ] ]
+                svg.fill "#333"
+                svg.children [ str (sprintf "£%.0f" data.value) ] ]
 
-          Html.text
-              [ prop.x (ex + (if cos >= 0. then 1. else -1.0) * 12.)
-                prop.y ey
+          Svg.text
+              [ svg.x (ex + (if cos >= 0. then 1. else -1.0) * 12.)
+                svg.y ey
                 textAnchor
-                Interop.mkAttr "fill" "#999"
-                prop.dy 18
-                prop.children [ str (sprintf "(%.2f%%)" (data.percent * 100.)) ] ] ]
+                svg.fill "#999"
+                svg.dy 18
+                svg.children [ str (sprintf "(%.2f%%)" (data.percent * 100.)) ] ] ]
 
 let private totalsPieChart state dispatch =
     let counter = 1
@@ -146,7 +146,7 @@ let private totalsPieChart state dispatch =
         Array.sortBy (fun x -> x.value)
 
     Recharts.pieChart
-        [ prop.style [ style.margin (10, 30, 0, 0) ]
+        [ pieChart.margin (10, 30, 0, 0)
           pieChart.width (int Browser.Dom.window.innerWidth)
           pieChart.height 300
           pieChart.children
@@ -159,7 +159,7 @@ let private totalsPieChart state dispatch =
                     pie.outerRadius 80
                     pie.activeIndex state.PieChartIndex
                     
-                    Interop.mkAttr "activeShape" renderActiveShape
+                    Interop.mkPieAttr "activeShape" renderActiveShape
                     
                     pie.children [
                         Recharts.cell [ cell.fill "#0088FE" ]
@@ -168,7 +168,7 @@ let private totalsPieChart state dispatch =
                         Recharts.cell [ cell.fill "#FF8042" ]
                     ]
                     
-                    Interop.mkAttr "onMouseEnter" (onPieEnter data dispatch) ]
+                    Interop.mkPieAttr "onMouseEnter" (onPieEnter data dispatch) ]
 
                 Recharts.pie
                     [ pie.data (polarDataInnerCircle counter)
@@ -178,7 +178,7 @@ let private totalsPieChart state dispatch =
                       pie.innerRadius 45
                       pie.outerRadius 50
                       pie.fill "#82ca9d"
-                      cell.fill (colors.[(abs counter) % colors.Length]) ] ] ]
+                      Interop.mkPieAttr "fill" (colors.[(abs counter) % colors.Length]) ] ] ]
 
 let statisticsCard model dispatch =
     card [ totalsPieChart model dispatch ]
