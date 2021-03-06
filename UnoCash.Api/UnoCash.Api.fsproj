@@ -6,30 +6,30 @@
         <FSharpCoreImplicitPackageVersion>5.0.*</FSharpCoreImplicitPackageVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.0"/>
-        <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0"/>
-        <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11"/>
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0"/>
+        <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.0" />
+        <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
+        <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
 
-        <ProjectReference Include="..\UnoCash.Core.Legacy\UnoCash.Core.Legacy.csproj"/>
-        <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.fsproj"/>
+        <ProjectReference Include="..\UnoCash.Core.Legacy\UnoCash.Core.Legacy.csproj" />
+        <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.fsproj" />
 
-        <None Include="host.json" CopyToOutputDirectory="PreserveNewest"/>
-        <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
+        <None Include="host.json" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
 
-        <Compile Include="Core.fs"/>
-        <Compile Include="Result.fs"/>
-        <Compile Include="Json.fs"/>
-        <Compile Include="HttpRequest.fs"/>
-        <Compile Include="JwtToken.fs"/>
-        <Compile Include="Function.fs"/>
-        <Compile Include="ExpenseRequest.fs"/>
-        <Compile Include="AddExpense.fs"/>
-        <Compile Include="GetExpenses.fs"/>
-        <Compile Include="DeleteExpense.fs"/>
-        <Compile Include="GetReceiptUploadSasToken.fs"/>
-        <Compile Include="GetReceiptData.fs"/>
+        <Compile Include="Core.fs" />
+        <Compile Include="Result.fs" />
+        <Compile Include="Json.fs" />
+        <Compile Include="HttpRequest.fs" />
+        <Compile Include="JwtToken.fs" />
+        <Compile Include="Function.fs" />
+        <Compile Include="ExpenseRequest.fs" />
+        <Compile Include="AddExpense.fs" />
+        <Compile Include="GetExpenses.fs" />
+        <Compile Include="DeleteExpense.fs" />
+        <Compile Include="GetReceiptUploadSasToken.fs" />
+        <Compile Include="GetReceiptData.fs" />
 
-        <None Include="Main.fs"/>
+        <None Include="Main.fs" />
     </ItemGroup>
 </Project>
