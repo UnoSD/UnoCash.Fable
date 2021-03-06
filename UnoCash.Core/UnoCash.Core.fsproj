@@ -5,20 +5,24 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Azure.AI.FormRecognizer" Version="3.0.0" />
       <PackageReference Include="FSharp.Azure.Storage" Version="5.0.1" />
+      <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.1" />
       <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.2" />
+      <PackageReference Include="System.Text.Json" Version="5.0.1" />
 
       <ProjectReference Include="..\UnoCash.Dto\UnoCash.Dto.fsproj" />
 
       <Compile Include="Async.fs" />
-
       <Compile Include="String.fs" />
-
+      <Compile Include="Option.fs" />
       <Compile Include="Configuration.fs" />
       <Compile Include="Storage.fs" />
       <Compile Include="Table.fs" />
       <Compile Include="ExpenseWriter.fs" />
       <Compile Include="ExpenseReader.fs" />
+      <Compile Include="UnoCashFormField.fs" />
+      <Compile Include="ReceiptParser.fs" />
     </ItemGroup>
 
 </Project>
