@@ -13,7 +13,6 @@
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
         <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />
 
-        <ProjectReference Include="..\UnoCash.Core.Legacy\UnoCash.Core.Legacy.csproj" />
         <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.fsproj" />
 
         <None Include="host.json" CopyToOutputDirectory="PreserveNewest" />
