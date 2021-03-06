@@ -122,6 +122,10 @@ Target.create "PulumiSetVariables" (fun _ ->
     !! "UnoCash.Api/**/publish" |>
     Seq.exactlyOne |>
     Pulumi.setConfig "UnoCash.Pulumi:ApiBuild"
+    
+    !! "UnoCash.Fable/output" |>
+    Seq.exactlyOne |>
+    Pulumi.setConfig "UnoCash.Pulumi:FableBuild"
 )
 
 Target.create "PulumiUp" (fun _ ->

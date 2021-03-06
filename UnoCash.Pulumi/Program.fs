@@ -462,22 +462,22 @@ let infra() =
         return 0
     }
 
-    let fulmaPublishDir =
-        "/home/uno/savs/sourcecode/dotNET/UnoCash/UnoCash.Fulma/output/"
-
     let getContentType fileName =
         match FileExtensionContentTypeProvider().TryGetContentType(fileName) with
         | true, ct -> ct
         | _        -> null
 
-    Directory.EnumerateFiles(fulmaPublishDir, "*", SearchOption.AllDirectories) |>
+    let fablePublishDir =
+        config.["FableBuild"]
+    
+    Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
     Seq.iteri(fun index file -> (blob {
         name                 $"unocashblob{index}"
         source               { Path = file }.ToPulumiType
         accessTier           "Hot"
-        contentType          (getContentType file.[fulmaPublishDir.Length..])
+        contentType          (getContentType file.[fablePublishDir.Length..])
         resourceType         "Block"
-        resourceName         file.[fulmaPublishDir.Length..]
+        resourceName         file.[fablePublishDir.Length..]
         storageAccountName   webContainer.StorageAccountName
         storageContainerName webContainer.Name
     } |> ignore))
