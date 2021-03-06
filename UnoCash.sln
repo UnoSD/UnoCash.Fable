@@ -16,7 +16,6 @@ ProjectSection(SolutionItems) = preProject
 	UnoCash.Test\GetExpenses.http = UnoCash.Test\GetExpenses.http
 	UnoCash.Test\GetReceiptData.http = UnoCash.Test\GetReceiptData.http
 	UnoCash.Test\GetReceiptUploadSasToken.http = UnoCash.Test\GetReceiptUploadSasToken.http
-	UnoCash.Test\UpdateExpense.http = UnoCash.Test\UpdateExpense.http
 	UnoCash.Test\Test-GetExpenses.http = UnoCash.Test\Test-GetExpenses.http
 EndProjectSection
 EndProject
