@@ -19,14 +19,15 @@ It is also something I will probably use in my tech talks as a prototype of a mo
 
 The project uses:
 
-* Blazor client side to create a SPA in WebAssembly and to have full end-to-end .NET, it also allows sharing of libraries between front end and back end making my life easier and it's awsome compared to text-searching JavaScript and getting version conflicts between DTOs updated on either end (Now most of the front end work is in Fable + Elmish)
+* Fable client side to create a SPA in F# and to have full end-to-end F# experience, it also allows sharing of libraries between front end and back end making my life easier and it's awesome compared to text-searching JavaScript and getting version conflicts between DTOs updated on either end
 * Azure Functions as a serverless microservice back end, deployed in a consumption plan so extremely cheap
-* Azure Storage blobs to host the static website in Blazor so no need for any compute for the front end
+* Azure Storage blobs to host the static website so no need for any compute for the front end
 * Azure Tables for storage, because it's way cheaper than Cosmos DB and it is behind the same SDK API so it can be easily migrated
-* Azure Form Recognizer to analyse receipt photos and extract data (still in private preview, I had to request access to Microsoft)
+* Azure Form Recognizer to analyse receipt photos and extract data
 * Azure API Management on a consumption plan to manage calls from the front end to back end, adding security and quotas
 * Azure AD for authentication
-* Pulumi for deployments (using my Pulumi.FSharp.Azure DSL library for idiomatic F# feel) (and ARM and Azure CLI for missing features in Pulumi)
+* Pulumi for deployments (using my Pulumi.FSharp.Extensions DSL library for idiomatic F# feel)
+* FAKE to build and deploy the application and the infrastructure
 
 It will use soon-ish:
 
