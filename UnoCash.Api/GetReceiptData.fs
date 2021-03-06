@@ -22,6 +22,6 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
                 Multiple = Error [ "Multiple blob names not supported" ] |> ignoreSnd
             } |> getQueryStringResult req.Query 
         
-        return ReceiptParser.ParseAsync blobName |> Async.AwaitTask
+        return ReceiptParser.parseAsync blobName
     } |>
     runAsync
