@@ -75,7 +75,7 @@ Target.create "PublishApi" (fun _ ->
     let publishOptions (options : DotNet.PublishOptions) =
         { options with Configuration = DotNet.BuildConfiguration.Release }
     
-    DotNet.publish publishOptions "UnoCash.Api/UnoCash.Api.csproj"
+    DotNet.publish publishOptions "UnoCash.Api/UnoCash.Api.fsproj"
 
     let publishDirSeq = !! "UnoCash.Api/**/publish/**/**"
     let publishDir = !! "UnoCash.Api/**/publish" |> Seq.exactlyOne
