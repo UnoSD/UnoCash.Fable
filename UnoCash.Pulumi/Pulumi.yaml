@@ -1,5 +1,2 @@
 name: UnoCash.Pulumi
 runtime: dotnet
-description: Infrastructure deployment
-backend:
-  url: file://~/.pulumi/project-stacks/UnoCash
