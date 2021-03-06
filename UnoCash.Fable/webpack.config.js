@@ -41,13 +41,13 @@ module.exports = (env, options) => {
             {
                 demo: [
                     "@babel/polyfill",
-                    './src/UnoCash.Fulma.fsproj',
+                    './src/UnoCash.Fable.fsproj',
                     './src/scss/main.scss'
                 ]
             } : {
                 app: [
                     "@babel/polyfill",
-                    './src/UnoCash.Fulma.fsproj'
+                    './src/UnoCash.Fable.fsproj'
                 ],
                 style: [
                     './src/scss/main.scss'

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29021.104
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "UnoCash.Fulma", "UnoCash.Fulma\src\UnoCash.Fulma.fsproj", "{FC09E92F-AAFD-4FED-9827-29CE73FA767F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "UnoCash.Fable", "UnoCash.Fable\src\UnoCash.Fable.fsproj", "{FC09E92F-AAFD-4FED-9827-29CE73FA767F}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnoCash.Pulumi", "UnoCash.Pulumi\UnoCash.Pulumi.fsproj", "{2DBEB983-D013-47F8-971B-537FD8DFC6C2}"
 EndProject

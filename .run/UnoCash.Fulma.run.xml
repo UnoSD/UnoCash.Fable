@@ -4,6 +4,9 @@
     <option name="PROGRAM_PARAMETERS" value="fake run build.fsx -t WatchFable" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="PASS_PARENT_ENVS" value="1" />
+    <envs>
+      <env name="FAKE_DETAILED_ERRORS" value="true" />
+    </envs>
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
     <method v="2">
       <option name="Build" default="false" projectName="UnoCash.Fulma" projectPath="$PROJECT_DIR$/UnoCash.Fulma/src/UnoCash.Fulma.fsproj" />

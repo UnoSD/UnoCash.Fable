@@ -93,14 +93,12 @@ Target.create "Clean" (fun _ ->
 )
 
 Target.create "Install" (fun _ ->
-    DotNet.restore
-        (DotNet.Options.withWorkingDirectory "UnoCash.Fulma")
-        "UnoCash.Fulma.sln"
+    DotNet.restore id "UnoCash.sln"
 )
 
 Target.create "YarnInstall" (fun _ ->
     let yarnParams (yparams : Yarn.YarnParams) =
-        { yparams with WorkingDirectory = "UnoCash.Fulma" }
+        { yparams with WorkingDirectory = "UnoCash.Fable" }
 
     Yarn.install yarnParams
 )
@@ -108,12 +106,12 @@ Target.create "YarnInstall" (fun _ ->
 Target.create "PublishFable" (fun _ ->
     // Get MD5 of the project, if unchanged, don't run
     Yarn.exec "webpack --mode production"
-              (fun o -> { o with WorkingDirectory = "UnoCash.Fulma" })
+              (fun o -> { o with WorkingDirectory = "UnoCash.Fable" })
 )
 
 Target.create "WatchFable" (fun _ ->
     Yarn.exec "webpack-dev-server --mode development"
-              (fun o -> { o with WorkingDirectory = "UnoCash.Fulma" })
+              (fun o -> { o with WorkingDirectory = "UnoCash.Fable" })
 )
 
 Target.create "PulumiPreview" (fun _ ->
