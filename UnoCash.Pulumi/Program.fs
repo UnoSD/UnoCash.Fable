@@ -468,7 +468,7 @@ let infra() =
         | _        -> null
 
     let fablePublishDir =
-        config.["FableBuild"]
+        config.["FableBuild"] + "/"
     
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
     Seq.iteri(fun index file -> (blob {
