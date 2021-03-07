@@ -15,8 +15,8 @@
     "bulma-calendar": "0.1.7",
     "bulma-tooltip": "^3.0.2",
     "core-js": "^3.6.5",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
     "recharts": "^1.8.5"
   },
   "devDependencies": {
