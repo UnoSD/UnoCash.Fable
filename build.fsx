@@ -29,7 +29,7 @@ module Pulumi =
         pulumi' id args |> ignore
     
     let setConfig key value =
-        sprintf "config set %s %s" key value |>
+        $"config set %s{key} %s{value}" |>
         pulumi
 
     let up () =
@@ -139,7 +139,7 @@ Target.create "PulumiUp" (fun _ ->
 
 Target.create "BackupData" (fun _ ->
     let codeRequest (dcr : DeviceCodeResult) =
-        printfn "%s https://aka.ms/devicelogin" dcr.UserCode
+        printfn $"{dcr.UserCode} https://aka.ms/devicelogin"
         System.Threading.Tasks.Task.CompletedTask
     
     let appId =
