@@ -2,6 +2,7 @@ module Pulumi.LetsEncrypt.Certificate
 
 open Pulumi.FSharp.Azure.Dns.Inputs
 open Pulumi.FSharp.Azure.Dns
+open Pulumi.FSharp.Outputs
 open Pulumi.FSharp.Output
 open LetsEncrypt
 open Certes.Acme

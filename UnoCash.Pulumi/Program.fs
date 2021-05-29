@@ -14,6 +14,7 @@ open System.Collections.Generic
 open Pulumi.FSharp.Azure.Core
 open Pulumi.Azure.AppService
 open Pulumi.FSharp.AzureAD
+open Pulumi.FSharp.Outputs
 open Pulumi.FSharp.Output
 open Pulumi.FSharp.Config
 open Pulumi.FSharp.Assets
