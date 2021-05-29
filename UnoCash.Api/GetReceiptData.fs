@@ -1,17 +1,16 @@
 module UnoCash.Api.GetReceiptData
 
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Azure.Functions.Worker.Http
 open UnoCash.Core
-open Microsoft.Azure.WebJobs
 open UnoCash.Api.HttpRequest
 open UnoCash.Api.Function
-open Microsoft.AspNetCore.Http
-open Microsoft.Azure.WebJobs.Extensions.Http
 
 // Constrain UPN also for requests such as GetReceipt* as a
 // cross-user request could happen even if all calls are authenticated
 
-[<FunctionName("GetReceiptData")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
+[<Function("GetReceiptData")>]
+let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequestData) =
     result {
         let! blobName =
             {
@@ -20,8 +19,8 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
                 Empty    = Error [ "Empty blob name" ]
                 Missing  = Error [ "Missing blob name" ]
                 Multiple = Error [ "Multiple blob names not supported" ] |> ignoreSnd
-            } |> getQueryStringResult req.Query 
+            } |> getQueryStringResult req.Url.Query 
         
         return ReceiptParser.parseAsync blobName
     } |>
-    runAsync
+    runAsync req

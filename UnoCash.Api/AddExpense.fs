@@ -1,15 +1,14 @@
 module UnoCash.Api.AddExpenses
 
 open System.IO
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Azure.Functions.Worker.Http
 open UnoCash.Core
 open UnoCash.Dto
 open UnoCash.Api.Function
-open Microsoft.Azure.WebJobs
-open Microsoft.AspNetCore.Http
-open Microsoft.Azure.WebJobs.Extensions.Http
 
-[<FunctionName("AddExpense")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
+[<Function("AddExpense")>]
+let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequestData) =
     use reader = new StreamReader(req.Body)
 
     result {
@@ -22,4 +21,4 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
                mapHttpResult (ignoreSnd "" >> Ok)
                              (sprintf "Error %i occurred while writing the expense" >> Error)
     } |>
-    runFlattenAsync 
+    runFlattenAsync req

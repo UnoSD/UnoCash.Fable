@@ -1,16 +1,15 @@
 module UnoCash.Api.GetReceiptUploadSasToken
 
 open System
-open Microsoft.Extensions.Primitives
-open Microsoft.WindowsAzure.Storage
-open Microsoft.WindowsAzure.Storage.Blob
-open Microsoft.Azure.WebJobs
+open System.Net
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Azure.Functions.Worker.Http
+open Microsoft.Azure.Storage
+open Microsoft.Azure.Storage.Blob
 open UnoCash.Api.Function
-open Microsoft.AspNetCore.Http
-open Microsoft.Azure.WebJobs.Extensions.Http
 
-[<FunctionName("GetReceiptUploadSasToken")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
+[<Function("GetReceiptUploadSasToken")>]
+let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequestData) =
     async {
         let connectionString =
             Environment.GetEnvironmentVariable("StorageAccountConnectionString")
@@ -29,8 +28,13 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
                 SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(2.)) |>
             cloudBlob.GetSharedAccessSignature
             
-        req.HttpContext.Response.Headers.Add("blobName", cloudBlob.Name |> StringValues)
+        let response =
+            req.CreateResponse(HttpStatusCode.OK)
             
-        return $"{cloudBlob.Uri}{sas}" |> Ok
+        response.Headers.Add("blobName", cloudBlob.Name)
+        
+        do! response.WriteStringAsync($"{cloudBlob.Uri}{sas}")
+            
+        return response
     } |>
-    runAsync'
+    Async.StartAsTask

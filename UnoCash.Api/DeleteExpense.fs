@@ -1,19 +1,18 @@
 module UnoCash.Api.DeleteExpense
 
-open Microsoft.Azure.WebJobs
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Azure.Functions.Worker.Http
 open UnoCash.Api.HttpRequest
 open UnoCash.Api.Function
-open Microsoft.AspNetCore.Http
-open Microsoft.Azure.WebJobs.Extensions.Http
 open UnoCash.Core
 
-[<FunctionName("DeleteExpense")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest) =
+[<Function("DeleteExpense")>]
+let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequestData) =
     result {
         let! upn = 
             JwtToken.tryGetUpn req.Cookies
         and! account =
-            ExpenseRequest.tryGetAccount req.Query
+            ExpenseRequest.tryGetAccount req.Url.Query
         and! guid =
             {
                 Key      = "id"
@@ -22,10 +21,10 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest)
                 Missing  = Error "Missing id value"
                 Multiple = Error "Multiple ids not supported" |> ignoreSnd
             } |>
-            getQueryStringResult req.Query
+            getQueryStringResult req.Url.Query
         
         return ExpenseWriter.deleteAsync upn account guid |> 
                mapHttpResult (sprintf "%s" >> Ok)
                              (sprintf "Error %i occurred while deleting the expense" >> Error)
     } |>
-    runFlattenAsync
+    runFlattenAsync req

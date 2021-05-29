@@ -13,7 +13,7 @@ type Task with
         async.Bind(t.AsAsync(), f >> Async.AwaitTask) |> Async.StartAsTask
 
 type AzureFunctionBuilder() =
-    member __.Bind(v : 'a option, f : 'a -> (Task<IActionResult> * 'b)) =
+    member _.Bind(v : 'a option, f : 'a -> Task<IActionResult> * 'b) =
         match v with
         | Some x -> f x
         | None   -> (BadRequestObjectResult("Option was None") :>
@@ -21,7 +21,7 @@ type AzureFunctionBuilder() =
                      Task.FromResult,
                      Unchecked.defaultof<'b>)
         
-    member __.Bind(v : Result<'a, string>, f : 'a -> (Task<IActionResult> * 'b)) =
+    member _.Bind(v : Result<'a, string>, f : 'a -> Task<IActionResult> * 'b) =
         match v with
         | Ok x    -> f x
         | Error x -> (BadRequestObjectResult(x) :>
@@ -29,18 +29,18 @@ type AzureFunctionBuilder() =
                       Task.FromResult,
                       Unchecked.defaultof<'b>)
         
-    member __.Bind(v : Task<'a>, f : 'a -> (Task<IActionResult> * 'b)) =
+    member _.Bind(v : Task<'a>, f : 'a -> Task<IActionResult> * 'b) =
         (Task.bind (f >> fst) v, Unchecked.defaultof<'b>)
 
-    member __.Bind(v : Async<'a>, f : 'a -> (Task<IActionResult> * 'b)) =
+    member _.Bind(v : Async<'a>, f : 'a -> Task<IActionResult> * 'b) =
         async.Bind(v, (f >> fst >> Async.AwaitTask)) |> Async.StartAsTask, Unchecked.defaultof<'b>
     
-    member __.Run(v : Task<IActionResult>, _) = v
+    member _.Run(v : Task<IActionResult>, _) = v
 
-    member __.Return (v : #IActionResult          ) = (v :> IActionResult |> Task.FromResult                            , ())
-    member __.Return (v : (unit -> #IActionResult)) = (v() :> IActionResult |> Task.FromResult                          , ())
-    member __.Return (v : Task<#IActionResult>    ) = (v |> Task.map (fun x -> x :> IActionResult)                      , ())
-    member __.Return (v : Async<#IActionResult>   ) = (v |> Async.map (fun x -> x :> IActionResult) |> Async.StartAsTask, ())
+    member _.Return (v : #IActionResult        ) = (v :> IActionResult |> Task.FromResult                            , ())
+    member _.Return (v : unit -> #IActionResult) = (v() :> IActionResult |> Task.FromResult                          , ())
+    member _.Return (v : Task<#IActionResult>  ) = (v |> Task.map (fun x -> x :> IActionResult)                      , ())
+    member _.Return (v : Async<#IActionResult> ) = (v |> Async.map (fun x -> x :> IActionResult) |> Async.StartAsTask, ())
         
 let azureFunction = AzureFunctionBuilder()
 let azureFunction' (_ : HttpRequest) = AzureFunctionBuilder() // Set the request and use for custom operations such as setCookie

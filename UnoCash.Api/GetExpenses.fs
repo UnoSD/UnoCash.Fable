@@ -1,19 +1,25 @@
 module UnoCash.Api.GetExpenses
 
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Azure.Functions.Worker.Http
 open UnoCash.Core
-open Microsoft.Azure.WebJobs
 open UnoCash.Api.HttpRequest
 open UnoCash.Api.Function
-open Microsoft.AspNetCore.Http
-open Microsoft.Azure.WebJobs.Extensions.Http
 
-[<FunctionName("GetExpenses")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
+let getCookiesFromHeaders (headers : HttpHeadersCollection) =
+    [ for c in headers do
+          if c.Key = "Cookie" then
+              yield HttpCookie(c.Value |> Seq.head |> (fun x -> x.Split('=').[0]),
+                               c.Value |> Seq.head |> (fun x -> x.Split('=').[1])) |> unbox<IHttpCookie> ]
+
+[<Function("GetExpenses")>]
+let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequestData) =
     result {
+        //req.Identities
         let! upn = 
-            JwtToken.tryGetUpn req.Cookies
+            JwtToken.tryGetUpn (getCookiesFromHeaders req.Headers) // req.Cookies not working, it's empty
         and! account =
-            ExpenseRequest.tryGetAccount req.Query
+            ExpenseRequest.tryGetAccount req.Url.Query
         and! guidOption =
             {
                 Key      = "id"
@@ -21,7 +27,7 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
                 Empty    = Error "Empty id value"
                 Missing  = Ok None
                 Multiple = Error "Multiple ids not supported" |> ignoreSnd
-            } |> getQueryStringResult req.Query 
+            } |> getQueryStringResult req.Url.Query
         
         let expensesAsync =
             match guidOption with
@@ -30,4 +36,4 @@ let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
         
         return expensesAsync
     } |>
-    runAsync
+    runAsync req
