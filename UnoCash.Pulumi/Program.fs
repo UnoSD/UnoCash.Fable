@@ -46,7 +46,7 @@ let infra() =
     let apiManagementEndpoint =
         "ApiManagementEndpoint"
     
-    let (origins, isFirstRun) =
+    let origins, isFirstRun =
         output {
             let! outputs =
                 stackOutputs
@@ -214,7 +214,7 @@ let infra() =
     
     let swApiPolicyXml =
         output {
-            let! (tokenValue, _) =
+            let! tokenValue, _ =
                 token
                 
             let! url = apiManagement.GatewayUrl
@@ -485,7 +485,7 @@ let infra() =
     
     let sasExpiry =
         output {
-            let! (_, expiry) = token            
+            let! _, expiry = token            
             return expiry.ToString("u")
         }
     
