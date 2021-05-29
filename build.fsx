@@ -93,7 +93,8 @@ Target.create "Clean" (fun _ ->
 )
 
 Target.create "Install" (fun _ ->
-    DotNet.restore id "UnoCash.sln"
+    DotNet.restore (fun x -> { x with MSBuildParams = { x.MSBuildParams with DisableInternalBinLog = true } })
+                   "UnoCash.sln"
 )
 
 Target.create "YarnInstall" (fun _ ->
