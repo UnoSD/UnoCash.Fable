@@ -5,11 +5,13 @@ open UnoCash.Fulma.ExpenseForm
 open UnoCash.Fulma.ShowExpenses
 open UnoCash.Fulma.About
 open UnoCash.Fulma.Statistics
+open UnoCash.Fulma.SplitExpense.View
 
 let page model =
     model |>
     match model.CurrentTab with
     | AddExpense     -> expenseFormCard "Add"
+    | SplitExpense   -> splitExpenseView
     | EditExpense    -> expenseFormCard "Edit"
     | ShowExpenses   -> showExpensesCard
     | About          -> aboutCard

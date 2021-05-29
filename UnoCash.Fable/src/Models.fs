@@ -11,6 +11,7 @@ type Expense =
 
 type Tab =
     | AddExpense
+    | SplitExpense
     | EditExpense
     | ShowExpenses
     | ShowStatistics

@@ -1,4 +1,4 @@
-module UnoCash.Fulma.ExpenseForm
+module UnoCash.Fulma.SplitExpense.View
 
 open Fable.FontAwesome
 open Fable.React
@@ -9,8 +9,6 @@ open UnoCash.Fulma.Messages
 open UnoCash.Fulma.Helpers
 open UnoCash.Fulma.Models
 open UnoCash.Fulma.Config
-open Fable.Core.JsInterop
-open System
 
 let private buttons dispatch submitText =
     Card.footer []
@@ -20,14 +18,6 @@ let private buttons dispatch submitText =
                                 [ str "Split" ] ]
 
 let private expenseForm model dispatch =
-    let dropdown title options value msg =
-        dropdownWithEvent title options value msg dispatch
-    
-    let inlineElements elements =
-        div [ Style [ Display DisplayOptions.Flex
-                      FlexFlow "row wrap" ] ]
-            elements
-    
     let descriptionField =
         Field.div [ ]
                   [ Label.label [ ] [ str "Description" ]
@@ -109,82 +99,14 @@ let private expenseForm model dispatch =
         List.map tag |>
         Field.div [ Field.IsGroupedMultiline ]
    
-    let dateField =
-        let date =
-            match model.Expense.Date.ToString("yyyy-MM-dd") with
-            | "01-01-01" -> DateTime.Today.ToString("yyyy-MM-dd")
-            | d          -> d
-        
-        Input.date [ Input.Value date
-                     Input.Props [ onChange ChangeDate dispatch ] ] |>
-        simpleField "Date" Fa.Solid.CalendarDay
-    
-    let payeeField =
-        Input.text [ Input.Placeholder "Ex: Tesco"
-                     Input.Props [ AutoFocus true; onChange ChangePayee dispatch ]
-                     Input.Value model.Expense.Payee ] |>
-        simpleField "Payee" Fa.Solid.CashRegister
-    
-    let receiptDisplayName =
-        match model.SelectedFile with
-        | Some file -> file
-        | None      -> "No receipt selected"
-    
-    let fileUploadIcon =
-        let icon =
-            match model.ReceiptAnalysis.Status with
-            | NotStarted -> [ Fa.Solid.Upload ]
-            | InProgress -> [ Fa.Solid.Spinner; Fa.Spin ]
-            | Completed  -> [ Fa.Solid.Check ]
-        
-        Icon.icon [] [ Fa.i icon [ ] ]
-        
-    let uploadButton =
-        File.cta []
-                 [ File.icon [] [ fileUploadIcon ]
-                   File.label [] [ str "Upload a receipt..." ] ]
-                 
-    let uploadFile (ev : Browser.Types.Event) =
-        let reader = Browser.Dom.FileReader.Create()
-        
-        //Show progress with Browser.Types.ProgressEvent
-        
-        let file = ev.target?files?(0)
-        
-        dispatch (FileSelected (file?name))
-        
-        reader.onload <- (fun evt -> FileUpload (evt.target?result, file?name, evt?total) |> dispatch)
-        
-        reader.readAsArrayBuffer(file)
-                 
-    let fileLabelChildren =
-        [ File.input [ Props [ OnInput uploadFile ] ]
-          uploadButton
-          File.name [] [ str receiptDisplayName ] ]
-    
-    let receiptUpload =
-        Field.div []
-                  [ File.file [ File.HasName ]
-                              [ File.label [] fileLabelChildren ] ]
-    
-    form [ receiptUpload
-                    
-           payeeField
-
-           dateField
-
-           amountField
+    form [ amountField
  
-           inlineElements [ dropdown "Account" model.Accounts model.Expense.Account ChangeAccount
-                            dropdown "Status"    expenseTypes model.Expense.Status  ChangeStatus
-                            dropdown "Type"     expenseStatus model.Expense.Type    ChangeType    ]
-
            tagsField
            
            tags
 
            descriptionField ]
                 
-let expenseFormCard submitButtonText model dispatch =
+let splitExpenseView model dispatch =
     card [ expenseForm model dispatch ]
-         (buttons dispatch submitButtonText)
+         (buttons dispatch "Apply")
