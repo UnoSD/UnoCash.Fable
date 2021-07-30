@@ -15,9 +15,9 @@ let private buttons dispatch submitText =
                 [ Card.Footer.a [ Props [ onClick AddNewExpense dispatch ] ]
                                 [ str submitText ]
                   Card.Footer.a [ Props [ onClick (ChangeToTab SplitExpense) dispatch ] ]
-                                [ str "Split" ] ]
+                                [ str "Add" ] ]
 
-let private expenseForm model dispatch =
+let private splitExpenseForm model dispatch =
     let descriptionField =
         Field.div [ ]
                   [ Label.label [ ] [ str "Description" ]
@@ -106,7 +106,67 @@ let private expenseForm model dispatch =
            tags
 
            descriptionField ]
+           
+let private tableHeader () =
+    let allColumns =
+        [
+            "Amount"
+            "Tags"
+            "Description"
+        ]
                 
+    let columns =
+        allColumns |>
+        List.map (fun columnName -> th [] [ str columnName ])
+    
+    let columnsWithActions =
+        columns @ [ th [ Style [ Width "1%" ] ] [ str "Actions" ] ]
+    
+    thead []
+          [ tr []
+               columnsWithActions ]
+
+let private row dispatch (expense : Expense) =
+    let cellButton message icon =
+        a [ onClick message dispatch
+            Style [ PaddingLeft "10px"; PaddingRight "10px" ] ]
+          [ Fa.i [ icon ] [] ]
+          
+    let deleteButton =
+        cellButton (DeleteExpense expense.id) Fa.Solid.Trash
+        
+    let allCells =
+        [
+            expense.amount |> string
+            expense.tags
+            expense.description
+        ]
+        
+    let cells =
+        allCells |>
+        List.map (fun cellContent -> td [] [ str cellContent ])
+    
+    let cellsWithActions =
+        cells @ [ td [ Style [ WhiteSpace WhiteSpaceOptions.Nowrap ] ]
+                     [ deleteButton ] ]
+    
+    tr [] cellsWithActions
+           
+let private tableBody expenses dispatch =
+    expenses |>
+    Array.map (row dispatch) |>
+    tbody []
+           
+let private expensesTable model dispatch =
+    Table.table [ Table.IsBordered
+                  Table.IsFullWidth
+                  Table.IsStriped ]
+                [ tableHeader ()
+                  tableBody model.Expenses dispatch ]
+
 let splitExpenseView model dispatch =
-    card [ expenseForm model dispatch ]
-         (buttons dispatch "Apply")
+    card [ str "Total: <EDITABLE TOTAL>"
+           expensesTable model dispatch
+           splitExpenseForm model dispatch
+           str "Left to allocate: <TOTAL-ITEMS>" ]
+         (buttons dispatch "Apply and back")
