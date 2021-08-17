@@ -7,10 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.AI.FormRecognizer" Version="3.1.0" />
+      <PackageReference Include="Azure.AI.FormRecognizer" Version="3.1.1" />
       <PackageReference Include="FSharp.Azure.Storage" Version="5.0.1" />
-      <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />
-      <PackageReference Include="FSharp.Control.FusionTasks" Version="2.1.1" />
+      <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.5" />
+      <PackageReference Include="FSharp.Control.FusionTasks" Version="2.4.0" />
       <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
       <PackageReference Include="System.Text.Json" Version="5.0.2" />
 
