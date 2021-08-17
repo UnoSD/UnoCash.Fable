@@ -34,10 +34,13 @@ type ParsedSasToken =
 // Fake to invoke Pulumi?
 // Create empty sample stacks to upload in Git
 
+[<Literal>]
+let appPrefix = "unocash"
+
 let infra() =
     let group =
         resourceGroup {
-            name "unocash"
+            name $"rg-{appPrefix}"
         }
     
     let stackOutputs =
@@ -59,7 +62,7 @@ let infra() =
     
     let storage =
         account {
-            name                   "unocashstorage"
+            name                   $"sa{appPrefix}"
             resourceGroup          group.Name
             accountReplicationType "LRS"
             accountTier            "Standard"
@@ -78,27 +81,27 @@ let infra() =
         }
         
     container {
-        name               "unocashreceipts"
+        name               "receipts"
         storageAccountName storage.Name
         resourceName       "receipts"
     }
         
     let webContainer =
         container {
-            name               "unocashweb"
+            name               "web"
             storageAccountName storage.Name
             resourceName       "$web"
         }
             
     let buildContainer =
         container {
-            name               "unocashbuild"
+            name               "build"
             storageAccountName storage.Name
         }
     
     let functionPlan =
         plan {
-            name          "unocashasp"
+            name          $"asp-{appPrefix}"
             resourceGroup group.Name
             kind          "FunctionApp"
             planSku {
@@ -109,7 +112,7 @@ let infra() =
 
     let apiBlob =
         blob {
-            name                 "unocashapi"
+            name                 $"{appPrefix}api"
             storageAccountName   storage.Name
             storageContainerName buildContainer.Name
             resourceType         "Block"
@@ -124,7 +127,7 @@ let infra() =
 
     let appInsights =
         insights {
-            name            "unocashai"
+            name            $"appi-{appPrefix}"
             resourceGroup   group.Name
             applicationType "web"
             retentionInDays 90
@@ -132,7 +135,7 @@ let infra() =
         
     let apiManagement =
         service {
-            name           "unocashapim"
+            name           $"apim-{appPrefix}"
             resourceGroup  group.Name
             publisherEmail "info@uno.cash"
             publisherName  "UnoSD"
@@ -245,8 +248,8 @@ let infra() =
 
     let spaAdApplication =
         application {
-            name                    "unocashspaaadapp"
-            displayName             "unocashspaaadapp"
+            name                    $"{appPrefix}spaaadapp"
+            displayName             $"{appPrefix}spaaadapp"
             oauth2AllowImplicitFlow true
             groupMembershipClaims   "None"
             
@@ -355,7 +358,7 @@ let infra() =
     
     let app =
         functionApp {
-            name                    "unocashapp"
+            name                    $"{appPrefix}app" // -func
             version                 "~3"
             resourceGroup           group.Name
             appServicePlanId        functionPlan.Id
@@ -381,7 +384,7 @@ let infra() =
     
     let apiFunction =
         api {
-            name                 "unocashapimapifunction"
+            name                 $"{appPrefix}apimapifunction"
             resourceName         "api"
             path                 "api"
             resourceGroup        group.Name
@@ -408,7 +411,7 @@ let infra() =
     
     let nv =
         namedValue {
-            name              "unocashapimnvfk"
+            name              $"{appPrefix}apimnvfk"
             displayName       "FunctionKey"
             apiManagementName apiManagement.Name
             resourceGroup     apiManagement.ResourceGroupName
@@ -422,7 +425,7 @@ let infra() =
         let! _ = nv.DisplayName
             
         apiPolicy {
-            name              "unocashapimapifunctionpolicy"
+            name              $"{appPrefix}apimapifunctionpolicy"
             apiName           apiFunction.Name
             apiManagementName apiFunction.ApiManagementName
             resourceGroup     apiFunction.ResourceGroupName
@@ -435,7 +438,7 @@ let infra() =
     
     let apiOperation (httpMethod : string) =
         apiOperation {
-            name              $"unocashapimapifunction{httpMethod.ToLower()}"
+            name              $"{appPrefix}apimapifunction{httpMethod.ToLower()}"
             resourceGroup     group.Name
             apiManagementName apiManagement.Name
             apiName           apiFunction.Name
@@ -452,7 +455,7 @@ let infra() =
         let! url = apiManagement.GatewayUrl
         
         blob {
-            name                 "unocashwebconfig"
+            name                 $"{appPrefix}webconfig"
             resourceName         "apibaseurl"
             storageAccountName   storage.Name
             storageContainerName webContainer.Name
@@ -473,7 +476,7 @@ let infra() =
     
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
     Seq.iteri(fun index file -> (blob {
-        name                 $"unocashblob{index}"
+        name                 $"{appPrefix}blob{index}"
         source               { Path = file }.ToPulumiType
         accessTier           "Hot"
         contentType          (getContentType file.[fablePublishDir.Length..])
