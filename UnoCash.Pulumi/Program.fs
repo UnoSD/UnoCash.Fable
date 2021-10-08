@@ -85,6 +85,12 @@ let infra() =
         storageAccountName storage.Name
         resourceName       "receipts"
     }
+    
+    table {
+        name               "expense"
+        resourceName       "Expense"
+        storageAccountName storage.Name
+    }
         
     let webContainer =
         container {
