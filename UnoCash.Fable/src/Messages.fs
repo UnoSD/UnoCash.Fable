@@ -28,3 +28,6 @@ type Message =
     // We need to split the app as this is growing
     | ChangePieChartIndex of int
     | ExportExpenses
+    
+    | AddAccount of string
+    | AccountNameChanged of string

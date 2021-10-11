@@ -5,6 +5,8 @@ open Fable.React.Props
 open Fulma
 open UnoCash.Fulma.Helpers
 open Fable.React
+open UnoCash.Fulma.Messages
+open UnoCash.Fulma.Models
 
 type Currency =
     | GBP
@@ -24,7 +26,7 @@ let private accounts =
         ("Wallet" , THB)
     ]
 
-let private accountsPanel accounts =
+let private accountsPanel accounts model dispatch =
     Columns.columns [ ]
         [ Column.column [ Column.Offset (Screen.All, Column.Is3)
                           Column.Width (Screen.All, Column.Is6) ]
@@ -33,7 +35,9 @@ let private accountsPanel accounts =
                   yield   Panel.Block.div [ ]
                             [ Control.div [ Control.HasIconLeft ]
                                 [ Input.text [ Input.Size IsSmall
-                                               Input.Placeholder "Account name" ]
+                                               Input.Placeholder "Account name"
+                                               Input.Value model.AccountName
+                                               Input.OnChange (fun ev -> AccountNameChanged ev.Value |> dispatch) ]
                                   Icon.icon [ Icon.Size IsSmall
                                               Icon.IsLeft ]
                                             [ i [ ClassName "fa fa-plus" ] [ ] ] ] ]
@@ -46,14 +50,15 @@ let private accountsPanel accounts =
                   yield Panel.Block.div [ ]
                           [ Button.button [ Button.Color IsPrimary
                                             Button.IsOutlined
-                                            Button.IsFullWidth ]
+                                            Button.IsFullWidth
+                                            Button.OnClick (fun _ -> AddAccount model.AccountName |> dispatch) ]
                                           [ str "Add" ] ] ] ] ]
 
-let settingsCard _ _ =
+let settingsCard model dispatch =
     let modifiers =
         Container.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ]
         
     card [ Hero.body []
                      [ Container.container [ Container.IsFluid
                                              modifiers ]
-                     [ accountsPanel accounts ] ] ] (str "")
+                     [ accountsPanel accounts model dispatch ] ] ] (str "")

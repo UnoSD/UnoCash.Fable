@@ -67,6 +67,8 @@ type Model =
         Accounts : string list
         ReceiptAnalysis : ReceiptAnalysis
         PieChartIndex : int
+        
+        AccountName : string
     }
     
 let emptyModel = 
@@ -83,6 +85,7 @@ let emptyModel =
         Accounts = accounts
         ReceiptAnalysis = { Status = NotStarted }
         PieChartIndex = 0
+        AccountName = ""
         Expense =
         {
             Date = DateTime.Today

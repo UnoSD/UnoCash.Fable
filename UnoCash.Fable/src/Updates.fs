@@ -177,3 +177,6 @@ let update message model =
     | ChangePieChartIndex ix -> { model with PieChartIndex = ix }, Cmd.none
     
     | ExportExpenses         -> model, expensesExportCmd model.Expenses
+    
+    | AccountNameChanged txt -> { model with AccountName = txt }, Cmd.none
+    | AddAccount _           -> { model with AccountName = "" }, Cmd.none
