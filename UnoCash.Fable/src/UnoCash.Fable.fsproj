@@ -21,6 +21,7 @@
     <Compile Include="About.fs" />
     <Compile Include="Statistics.fs" />
     <Compile Include="SplitExpense\View.fs" />
+    <Compile Include="Settings.fs" />
     <Compile Include="Pages.fs" />
     <Compile Include="View.fs" />
     <Compile Include="App.fs" />

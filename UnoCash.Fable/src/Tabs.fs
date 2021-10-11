@@ -17,5 +17,6 @@ let tabs model dispatch =
     Tabs.tabs [ Tabs.IsCentered ]
               [ tab AddExpense     "Add expense"
                 tab ShowExpenses   "Show expenses" 
-                tab ShowStatistics "Statistics"    
+                tab ShowStatistics "Statistics"
+                tab Settings       "Settings"
                 tab About          "About"         ]

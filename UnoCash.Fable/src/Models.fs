@@ -15,6 +15,7 @@ type Tab =
     | EditExpense
     | ShowExpenses
     | ShowStatistics
+    | Settings
     | About
 
 type AlertType =
