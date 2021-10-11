@@ -19,12 +19,8 @@ let private (|Icon|) =
     | EUR -> Fa.Solid.EuroSign
     | _   -> Fa.Solid.DollarSign
 
-let private accounts =
-    [
-        ("Current", GBP)
-        ("ISA"    , EUR)
-        ("Wallet" , THB)
-    ]
+let private accounts model =
+    List.map (fun accountName -> (accountName, GBP)) model.Accounts
 
 let private accountsPanel accounts model dispatch =
     Columns.columns [ ]
@@ -61,4 +57,4 @@ let settingsCard model dispatch =
     card [ Hero.body []
                      [ Container.container [ Container.IsFluid
                                              modifiers ]
-                     [ accountsPanel accounts model dispatch ] ] ] (str "")
+                     [ accountsPanel (accounts model) model dispatch ] ] ] (str "")

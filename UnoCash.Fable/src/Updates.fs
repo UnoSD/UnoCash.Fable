@@ -179,4 +179,4 @@ let update message model =
     | ExportExpenses         -> model, expensesExportCmd model.Expenses
     
     | AccountNameChanged txt -> { model with AccountName = txt }, Cmd.none
-    | AddAccount _           -> { model with AccountName = "" }, Cmd.none
+    | AddAccount name        -> { model with Accounts = name :: model.Accounts; AccountName = "" }, Cmd.none
