@@ -4,6 +4,7 @@ open Fable.FontAwesome
 
 let getExpensesUrl = sprintf "%s/api/GetExpenses"
 let addExpenseUrl = sprintf "%s/api/AddExpense"
+let addAccountUrl = sprintf "%s/api/AddAccount"
 let deleteExpenseUrl = sprintf "%s/api/DeleteExpense"
 let receiptUploadSasTokenUrl = sprintf "%s/api/GetReceiptUploadSasToken"
 let getReceiptDataUrl = sprintf "%s/api/GetReceiptData"

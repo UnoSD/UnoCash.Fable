@@ -129,6 +129,19 @@ let receiptParseCmd blobName apiBaseUrl =
 let expensesExportCmd expenses =
     Cmd.OfPromise.perform exportExpenses expenses (fun _ -> ChangeToTab ShowExpenses)
 
+let private addAccount apiBaseUrl name =
+    let body = name
+    
+    promise {
+        let! response =
+            fetch (addAccountUrl apiBaseUrl)
+                  [ Credentials RequestCredentials.Include
+                    Method HttpMethod.POST
+                    Body <| U3.Case3 body ]
+                  
+        return response.Ok
+    }
+
 let update message model =
     match message with
     | SetApiBaseUrl apiHost     -> { model with ApiBaseUrl = apiHost }, Cmd.none
@@ -179,4 +192,5 @@ let update message model =
     | ExportExpenses         -> model, expensesExportCmd model.Expenses
     
     | AccountNameChanged txt -> { model with AccountName = txt }, Cmd.none
-    | AddAccount name        -> { model with Accounts = name :: model.Accounts; AccountName = "" }, Cmd.none
+    | AddAccount name        -> model, Cmd.OfPromise.perform (addAccount model.ApiBaseUrl) name (fun _ -> AccountAdded name)
+    | AccountAdded name      -> { model with Accounts = name :: model.Accounts; AccountName = "" }, Cmd.none

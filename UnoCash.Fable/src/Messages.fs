@@ -29,5 +29,6 @@ type Message =
     | ChangePieChartIndex of int
     | ExportExpenses
     
-    | AddAccount of string
     | AccountNameChanged of string
+    | AddAccount of string
+    | AccountAdded of string
