@@ -2,20 +2,22 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
-    <FSharpCoreImplicitPackageVersion>5.0.*</FSharpCoreImplicitPackageVersion>
+    <TargetFramework>net6.0</TargetFramework>
+    <FSharpCoreImplicitPackageVersion>6.0.*</FSharpCoreImplicitPackageVersion>
     <NoWarn>FS0020</NoWarn>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="StaticWebsiteApimApiPolicy.xml" />
-    <Content Include="StaticWebsiteApimGetOperationPolicy.xml" />
-    <Content Include="StaticWebsiteApimGetIndexOperationPolicy.xml" />
-    <Content Include="StaticWebsiteApimPostOperationPolicy.xml" />
-    <Content Include="APIApimApiPolicy.xml" />
-    <Content Include="Pulumi.yaml" />
-    <Content Include="Pulumi.test.yaml" />
+    <None Include="StaticWebsiteApimApiPolicy.xml" />
+    <None Include="StaticWebsiteApimGetOperationPolicy.xml" />
+    <None Include="StaticWebsiteApimGetIndexOperationPolicy.xml" />
+    <None Include="StaticWebsiteApimPostOperationPolicy.xml" />
+    <None Include="APIApimApiPolicy.xml" />
+    <None Include="Pulumi.yaml" />
+    <None Include="Pulumi.msft.yaml" />
+    <None Include="Pulumi.test.yaml" />
+    
     <Compile Include="Async.fs" />
     <Compile Include="LetsEncrypt.fs" />
     <Compile Include="Output.fs" />
@@ -24,13 +26,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Certes" Version="3.0.0" />
-    <PackageReference Include="DnsClient" Version="1.5.0" />
+    <PackageReference Update="FSharp.Core" Version="6.0.5" />
+    <PackageReference Include="Certes" Version="3.0.3" />
+    <PackageReference Include="DnsClient" Version="1.6.1" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
-    <PackageReference Include="Pulumi.AzureAD" Version="4.3.0" />
-    <PackageReference Include="Pulumi.FSharp" Version="3.10.2" />
-    <PackageReference Include="FSharp.Core" Version="5.0.2" />
-    <PackageReference Include="Pulumi.FSharp.Azure" Version="4.14.0.2" />
+    <PackageReference Include="Pulumi.FSharp" Version="3.37.2" />
+    <PackageReference Include="Pulumi.FSharp.Azure" Version="4.34.0.3" />
     <PackageReference Include="Pulumi.FSharp.AzureAD" Version="4.3.0.2" />
     <PackageReference Include="Pulumi.FSharp.Core" Version="3.0.2" />
   </ItemGroup>

@@ -122,7 +122,7 @@ let infra() =
             storageAccountName   storage.Name
             storageContainerName buildContainer.Name
             resourceType         "Block"
-            source               { ArchivePath = config.["ApiBuild"] }.ToPulumiType
+            source               { ArchivePath = config["ApiBuild"] }.ToPulumiType
         }
     
     let codeBlobUrl =
@@ -196,7 +196,7 @@ let infra() =
                 let getTokenIfValid (expirationString : string) =
                     match DateTime.TryParse expirationString with
                     | true, x when x > DateTime.Now -> Valid (
-                                                           previousOutputs.[sasTokenOutputName] :?> string,
+                                                           previousOutputs[sasTokenOutputName] :?> string,
                                                            x
                                                        )
                     | _                             -> ExpiredOrInvalid
@@ -376,8 +376,8 @@ let infra() =
                 "WEBSITE_RUN_FROM_PACKAGE"       , io codeBlobUrl
                 "APPINSIGHTS_INSTRUMENTATIONKEY" , io appInsights.InstrumentationKey
                 "StorageAccountConnectionString" , io storage.PrimaryConnectionString
-                "FormRecognizerKey"              , input config.["FormRecognizerKey"]
-                "FormRecognizerEndpoint"         , input config.["FormRecognizerEndpoint"]
+                "FormRecognizerKey"              , input config["FormRecognizerKey"]
+                "FormRecognizerEndpoint"         , input config["FormRecognizerEndpoint"]
             ]
             
             functionAppSiteConfig {
@@ -478,16 +478,16 @@ let infra() =
         | _        -> null
 
     let fablePublishDir =
-        config.["FableBuild"] + "/"
+        config["FableBuild"] + "/"
     
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
     Seq.iteri(fun index file -> (blob {
         name                 $"{appPrefix}blob{index}"
         source               { Path = file }.ToPulumiType
         accessTier           "Hot"
-        contentType          (getContentType file.[fablePublishDir.Length..])
+        contentType          (getContentType file[fablePublishDir.Length..])
         resourceType         "Block"
-        resourceName         file.[fablePublishDir.Length..]
+        resourceName         file[fablePublishDir.Length..]
         storageAccountName   webContainer.StorageAccountName
         storageContainerName webContainer.Name
     } |> ignore))
