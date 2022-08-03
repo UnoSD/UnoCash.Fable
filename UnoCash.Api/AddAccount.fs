@@ -12,7 +12,7 @@ let private validateAccountName name =
     Result<string, string>.Ok name
 
 [<FunctionName("AddAccount")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
+let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "post")>]req: HttpRequest) =
     use reader = new StreamReader(req.Body)
 
     result {

@@ -1,5 +1,6 @@
 ﻿module Program
 
+open Pulumi.AzureNative.Web
 open Pulumi.FSharp.Azure.ApiManagement.Inputs
 open Pulumi.FSharp.Azure.AppService.Inputs
 open Pulumi.FSharp.Azure.ApiManagement
@@ -256,7 +257,7 @@ let infra() =
             
             return policy
         }
-    
+
     let getIndexOperation =
         apiOperation {
             name              "unocashapimindexoperation"
@@ -345,7 +346,7 @@ let infra() =
             }
             
             Pulumi.FSharp.AzureNative.Web.Inputs.managedServiceIdentity {
-                Pulumi.AzureNative.Web.ManagedServiceIdentityType.SystemAssigned
+                ManagedServiceIdentityType.SystemAssigned
             }
         }
     
@@ -370,19 +371,76 @@ let infra() =
         return ()
     }
     
+    // Usually that's the AppId, but that would mean setting a value in the app after creation so means two runs, let's
+    // avoid that with this.
+    let faAdAppIdentifier =
+        //(randomUuid { name $"ident-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+        "apiapp"
+    
+    // Currently we use two app, one to access the site and one between APIm and Function
+    // We could use the same so that the user can access the functions with their own credentials and not
+    // using APIm on their behalf. Problem with this approach is that no one will then stop them from hammering
+    // the function. the only way would be to restrict IP range outbound of APIM, but that's not possible in consumption
+    // so now APIM authenticates to the function as a service and the jwtToken cookie is used by the app to get the right
+    // user (user cannot tamper the token and change user because it's validated at APIM level first)
+    let faAdApplication =
+        application {
+            name                    $"{appPrefix}faaadapp"
+            displayName             $"{appPrefix}faaadapp"
+            
+            // Web
+            //replyUrls [
+            //    input "https://unocashapp4e650e1a.azurewebsites.net/.auth/login/aad/callback"
+            //]            
+            
+            identifierUris [
+                Output.Format($"api://{faAdAppIdentifier}")
+            ]
+            
+            (*
+	"requiredResourceAccess": [
+		{
+			"resourceAppId": "00000003-0000-0000-c000-000000000000",
+			"resourceAccess": [
+				{
+					"id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
+					"type": "Scope"
+				}
+			]
+		}
+        *)
+        
+        // 	"signInUrl": "https://unocashapp4e650e1a.azurewebsites.net",
+        }
+    servicePrincipal {
+        name "sp"
+        applicationId faAdApplication.ApplicationId
+        // assugbnebt required no
+    // visibile to users yes
+    // enabled for users to sign in yes    
+    }
+    
+    let faAdApplicationSecret =
+        applicationPassword {
+            name "func-aad-secret"
+            applicationObjectId faAdApplication.ObjectId
+            displayName "func-secret"
+        }
+    
     Pulumi.FSharp.AzureNative.Web.webAppApplicationSettings {
         name $"{appPrefix}appsettings"
         resourceName app.Name
         resourceGroup group.Name
         properties [
-            "AzureWebJobsStorage__accountName", io storage.Name
-            "FUNCTIONS_WORKER_RUNTIME"        , input "dotnet" // ?
-            "WEBSITE_RUN_FROM_PACKAGE"        , io apiBlob.Url
-            "APPINSIGHTS_INSTRUMENTATIONKEY"  , io appInsights.InstrumentationKey // MI
-            "StorageAccountConnectionString"  , io connectionString // APP SETT?
-            "FormRecognizerKey"               , input config["FormRecognizerKey"] // MI?
-            "FormRecognizerEndpoint"          , input config["FormRecognizerEndpoint"]
-            "FUNCTIONS_EXTENSION_VERSION"     , input "~4"
+            "AzureWebJobsStorage__accountName"        , io storage.Name
+            "FUNCTIONS_WORKER_RUNTIME"                , input "dotnet" // ?
+            "WEBSITE_RUN_FROM_PACKAGE"                , io apiBlob.Url
+            "APPINSIGHTS_INSTRUMENTATIONKEY"          , io appInsights.InstrumentationKey // MI
+            "StorageAccountConnectionString"          , io connectionString // APP SETT?
+            "FormRecognizerKey"                       , input config["FormRecognizerKey"] // MI?
+            "FormRecognizerEndpoint"                  , input config["FormRecognizerEndpoint"]
+            "FUNCTIONS_EXTENSION_VERSION"             , input "~4"
+            "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET", io faAdApplicationSecret.Value
         ]
     }
 
@@ -422,12 +480,55 @@ let infra() =
             subscriptionRequired false
         }
 
+    Pulumi.FSharp.AzureNative.Web.webAppAuthSettingsV2 {
+        name "authsett"
+        resourceName app.Name
+        resourceGroup group.Name
+        
+        Pulumi.FSharp.AzureNative.Web.Inputs.globalValidation {
+            requireAuthentication true
+            UnauthenticatedClientActionV2.Return403
+        }
+        
+        Pulumi.FSharp.AzureNative.Web.Inputs.identityProviders {
+            Pulumi.FSharp.AzureNative.Web.Inputs.azureActiveDirectory {
+                enabled true
+                
+                Pulumi.FSharp.AzureNative.Web.Inputs.azureActiveDirectoryRegistration {
+                    clientId faAdApplication.ApplicationId
+                    openIdIssuer (Output.Format($"https://sts.windows.net/{tenantId}/v2.0"))
+                    clientSecretSettingName "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
+                }
+                
+                Pulumi.FSharp.AzureNative.Web.Inputs.azureActiveDirectoryValidation {
+                    allowedAudiences [
+                        Output.Format($"api://{faAdAppIdentifier}")
+                    ]
+                }
+            }
+        }
+    }
+
+    let apiPolicyFromFile =
+        output {
+            let! appId =
+                spaAdApplication.ApplicationId
+
+            let! tenantId =
+                tenantId
+            
+            return String.Format(File.ReadAllText("APIApimApiPolicy.xml"),
+                                 tenantId,
+                                 appId,
+                                 faAdAppIdentifier)
+        }
+
     apiPolicy {
         name              $"{appPrefix}apimapifunctionpolicy"
         apiName           apiFunction.Name
         apiManagementName apiFunction.ApiManagementName
         resourceGroup     apiFunction.ResourceGroupName
-        xmlContent        (policyFromFile "APIApimApiPolicy.xml")           
+        xmlContent        apiPolicyFromFile
     }
     
     let apiOperation (httpMethod : string) =

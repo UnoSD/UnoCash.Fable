@@ -20,13 +20,8 @@
             </audiences>
 
         </validate-jwt>
-        
-        <set-header name="x-functions-key">
 
-<!--            <value>{{{{FunctionKey}}}}</value>-->
-            <value>x</value>
-
-        </set-header>
+        <authentication-managed-identity resource="api://{2}" />
 
     </inbound>
 

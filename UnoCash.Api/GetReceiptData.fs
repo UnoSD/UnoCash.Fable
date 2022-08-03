@@ -11,7 +11,7 @@ open Microsoft.Azure.WebJobs.Extensions.Http
 // cross-user request could happen even if all calls are authenticated
 
 [<FunctionName("GetReceiptData")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
+let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "get")>]req: HttpRequest) =
     result {
         let! blobName =
             {

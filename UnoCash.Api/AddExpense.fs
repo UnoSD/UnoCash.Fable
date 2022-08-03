@@ -9,7 +9,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Azure.WebJobs.Extensions.Http
 
 [<FunctionName("AddExpense")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "post")>]req: HttpRequest) =
+let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "post")>]req: HttpRequest) =
     use reader = new StreamReader(req.Body)
 
     result {

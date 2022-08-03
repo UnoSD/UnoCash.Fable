@@ -8,7 +8,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Azure.WebJobs.Extensions.Http
 
 [<FunctionName("GetExpenses")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "get")>]req: HttpRequest) =
+let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "get")>]req: HttpRequest) =
     result {
         let! upn = 
             JwtToken.tryGetUpn req.Cookies

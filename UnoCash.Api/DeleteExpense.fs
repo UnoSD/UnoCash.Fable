@@ -8,7 +8,7 @@ open Microsoft.Azure.WebJobs.Extensions.Http
 open UnoCash.Core
 
 [<FunctionName("DeleteExpense")>]
-let run ([<HttpTrigger(AuthorizationLevel.Function, "delete")>]req: HttpRequest) =
+let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "delete")>]req: HttpRequest) =
     result {
         let! upn = 
             JwtToken.tryGetUpn req.Cookies
