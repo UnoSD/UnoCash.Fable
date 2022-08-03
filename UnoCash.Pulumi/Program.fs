@@ -1,90 +1,67 @@
 ﻿module Program
 
-open Pulumi.AzureNative.Web
 open Pulumi.FSharp.Azure.ApiManagement.Inputs
-open Pulumi.FSharp.Azure.AppService.Inputs
+open Pulumi.FSharp.NamingConventions.Azure
 open Pulumi.FSharp.Azure.ApiManagement
 open Microsoft.AspNetCore.StaticFiles
-open Pulumi.FSharp.Azure.AppInsights
-open Pulumi.FSharp.Azure.AppService
+open Pulumi.AzureNative.Authorization
 open Pulumi.FSharp.AzureAD.Inputs
 open Pulumi.FSharp.Azure.Storage
-open System.Collections.Generic
+open Pulumi.AzureNative.Storage
+open Pulumi.AzureNative.Web
 open Pulumi.FSharp.AzureAD
 open Pulumi.FSharp.Outputs
 open Pulumi.FSharp.Output
 open Pulumi.FSharp.Config
 open Pulumi.FSharp.Assets
+open Pulumi.FSharp.Random
 open System.Diagnostics
 open System.Threading
 open Pulumi.FSharp
 open System.IO
 open System
 open Pulumi
-open Pulumi.FSharp.NamingConventions.Azure
-open Pulumi.FSharp.Random
-open Pulumi.AzureNative.Authorization
-
-type ParsedSasToken =
-    | Valid of string * DateTime
-    | ExpiredOrInvalid
-    | Missing
-
-// Local backend folder to be created by FAKE
-// Fake to invoke Pulumi?
-// Create empty sample stacks to upload in Git
 
 [<Literal>]
-let appPrefix = "unocash"
+let workloadShortName = "ucsh"
+let apiManagementEndpointOutputName = "ApiManagementEndpoint"
 
-let infra() =            
-    let group =
-        Pulumi.FSharp.AzureNative.Resources.resourceGroup {
-            name $"rg-{appPrefix}"
-        }
-    
+let infra () =
     let stackOutputs =
         StackReference(Deployment.Instance.StackName).Outputs
-   
-    //let speech =
-    //    Pulumi.FSharp.Azure.Cognitive.account {
-    //        name          $"cog-{appPrefix}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-    //        resourceGroup rg.Name
-    //        kind          "SpeechServices"
-    //        sttSku        { name "S0" }
-    //    }
+        
+    let group =
+        Pulumi.FSharp.AzureNative.Resources.resourceGroup {
+            name $"rg-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        }
     
-    let apiManagementEndpoint =
-        "ApiManagementEndpoint"
-    
-    // It seems to work also withut CORS policy, check it and fix it or remove this crap if not needed
-    let origins, isFirstRun =
+    // It seems to work also without CORS policy, check it and fix it or remove this crap if not needed
+    let origins =
         output {
             let! outputs =
                 stackOutputs
                 
-            return match outputs.TryGetValue apiManagementEndpoint with
-                   | true, endpoint -> $"http://localhost:8080, {endpoint}", false
-                   | _              -> "http://localhost:8080", true
-        } |>
-        Output.toTuple
+            return match outputs.TryGetValue apiManagementEndpointOutputName with
+                   | true, endpoint -> $"http://localhost:8080, {endpoint}"
+                   | _              -> "http://localhost:8080"
+        }
     
     let storage =
         Pulumi.FSharp.AzureNative.Storage.storageAccount {
-            name                   $"sa{appPrefix}"
+            name                   $"sa{workloadShortName}{Deployment.Instance.StackName}{Region.shortName}001"
             resourceGroup          group.Name
-            kind                   Pulumi.AzureNative.Storage.Kind.StorageV2
+            kind                   Kind.StorageV2
             
             Pulumi.FSharp.AzureNative.Storage.Inputs.sku {
-                name Pulumi.AzureNative.Storage.SkuName.Standard_LRS
+                name SkuName.Standard_LRS
             }
         }
         
     Pulumi.FSharp.AzureNative.Storage.blobServiceProperties {
-        name "blob-cors"
+        name             $"bsp-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
         blobServicesName "default"
-        accountName storage.Name
-        resourceGroup group.Name
+        accountName      storage.Name
+        resourceGroup    group.Name
         
         Pulumi.FSharp.AzureNative.Storage.Inputs.corsRules {
             corsRules [
@@ -98,63 +75,75 @@ let infra() =
             ]
         }
     }
-        
-    container {
-        name               "receipts"
-        storageAccountName storage.Name
-        resourceName       "receipts"
+    
+    Pulumi.FSharp.AzureNative.Storage.blobContainer {
+        name          "receipts"
+        accountName   storage.Name
+        containerName "receipts"
+        resourceGroup group.Name
     }
     
-    table {
-        name               "expense"
-        resourceName       "Expense"
-        storageAccountName storage.Name
+    Pulumi.FSharp.AzureNative.Storage.table {
+        name          "expense"
+        tableName     "Expense"
+        accountName   storage.Name
+        resourceGroup group.Name
     }
         
     let webContainer =
-        container {
-            name               "web"
-            storageAccountName storage.Name
-            resourceName       "$web"
+        Pulumi.FSharp.AzureNative.Storage.blobContainer {
+            name          "web"
+            accountName   storage.Name
+            containerName "$web"
+            resourceGroup group.Name
         }
             
     let buildContainer =
-        container {
+        Pulumi.FSharp.AzureNative.Storage.blobContainer {
             name               "build"
-            storageAccountName storage.Name
+            accountName storage.Name
+            resourceGroup group.Name
         }
     
     let functionPlan =
-        plan {
-            name          $"asp-{appPrefix}"
+        Pulumi.FSharp.AzureNative.Web.appServicePlan {
+            name          $"asp-{workloadShortName}"
             resourceGroup group.Name
             kind          "FunctionApp"
-            planSku {
-                size "Y1"
+            
+            Pulumi.FSharp.AzureNative.Web.Inputs.skuDescription {
+                name "Y1"
+                //size "Y1"
                 tier "Dynamic"
             }
         }
 
     let apiBlob =
-        blob {
-            name                 $"{appPrefix}api"
-            storageAccountName   storage.Name
-            storageContainerName buildContainer.Name
-            resourceType         "Block"
-            source               { ArchivePath = config["ApiBuild"] }.ToPulumiType
+        Pulumi.FSharp.AzureNative.Storage.blob {
+            name          $"{workloadShortName}api"
+            accountName   storage.Name
+            containerName buildContainer.Name
+            resourceGroup group.Name
+            source        { ArchivePath = config["ApiBuild"] }.ToPulumiType
+            
+            BlobType.Block
         }
 
+    // let storage = storage {}; let container = storage.container {}; let blob = container.blob {}; container.blob {}
+    // ComputationalExpressions on instances
+
     let appInsights =
-        insights {
-            name            $"appi-{appPrefix}"
+        Pulumi.FSharp.AzureNative.Insights.``component`` {
+            name            $"appi-{workloadShortName}"
             resourceGroup   group.Name
-            applicationType "web"
+            applicationType Pulumi.AzureNative.Insights.ApplicationType.Web
+            kind            "web"
             retentionInDays 90
         }
         
     let apiManagement =
         service {
-            name           $"apim-{appPrefix}"
+            name           $"apim-{workloadShortName}"
             resourceGroup  group.Name
             publisherEmail "info@uno.cash"
             publisherName  "UnoSD"
@@ -214,8 +203,8 @@ let infra() =
 
     let spaAdApplication =
         application {
-            name                    $"{appPrefix}spaaadapp"
-            displayName             $"{appPrefix}spaaadapp"
+            name                    $"{workloadShortName}spaaadapp"
+            displayName             $"{workloadShortName}spaaadapp"
             
             groupMembershipClaims   "None"
             
@@ -330,8 +319,8 @@ let infra() =
     }
     
     let accountKey =
-        Pulumi.AzureNative.Storage.ListStorageAccountKeys.Invoke(
-            Pulumi.AzureNative.Storage.ListStorageAccountKeysInvokeArgs(
+        ListStorageAccountKeys.Invoke(
+            ListStorageAccountKeysInvokeArgs(
                 AccountName = storage.Name,
                 ResourceGroupName = group.Name
                 )).Apply(fun x -> x.Keys[0].Value)
@@ -341,7 +330,7 @@ let infra() =
     
     let app =
         Pulumi.FSharp.AzureNative.Web.webApp {
-            name                    $"{appPrefix}app" // -func
+            name                    $"{workloadShortName}app" // -func
             kind                    "functionapp,linux"
             resourceGroup           group.Name
             serverFarmId            functionPlan.Id
@@ -393,8 +382,8 @@ let infra() =
     // user (user cannot tamper the token and change user because it's validated at APIM level first)
     let faAdApplication =
         application {
-            name                    $"{appPrefix}faaadapp"
-            displayName             $"{appPrefix}faaadapp"
+            name                    $"{workloadShortName}faaadapp"
+            displayName             $"{workloadShortName}faaadapp"
             
             // Web
             //replyUrls [
@@ -436,7 +425,7 @@ let infra() =
         }
     
     Pulumi.FSharp.AzureNative.Web.webAppApplicationSettings {
-        name $"{appPrefix}appsettings"
+        name $"{workloadShortName}appsettings"
         resourceName app.Name
         resourceGroup group.Name
         properties [
@@ -475,7 +464,7 @@ let infra() =
     
     let apiFunction =
         api {
-            name                 $"{appPrefix}apimapifunction"
+            name                 $"{workloadShortName}apimapifunction"
             resourceName         "api"
             path                 "api"
             resourceGroup        group.Name
@@ -532,7 +521,7 @@ let infra() =
         }
 
     apiPolicy {
-        name              $"{appPrefix}apimapifunctionpolicy"
+        name              $"{workloadShortName}apimapifunctionpolicy"
         apiName           apiFunction.Name
         apiManagementName apiFunction.ApiManagementName
         resourceGroup     apiFunction.ResourceGroupName
@@ -541,7 +530,7 @@ let infra() =
     
     let apiOperation (httpMethod : string) =
         apiOperation {
-            name              $"{appPrefix}apimapifunction{httpMethod.ToLower()}"
+            name              $"{workloadShortName}apimapifunction{httpMethod.ToLower()}"
             resourceGroup     group.Name
             apiManagementName apiManagement.Name
             apiName           apiFunction.Name
@@ -558,16 +547,15 @@ let infra() =
         let! url = apiManagement.GatewayUrl
         
         blob {
-            name                 $"{appPrefix}webconfig"
+            name                 $"{workloadShortName}webconfig"
             resourceName         "apibaseurl"
             storageAccountName   storage.Name
             storageContainerName webContainer.Name
             resourceType         "Block"
             source               { Text = url }.ToPulumiType
-            // parent // Add support for parent to group all blobs together
         }
         
-        return 0
+        return ()
     }
 
     let getContentType fileName =
@@ -577,39 +565,37 @@ let infra() =
 
     let fablePublishDir =
         config["FableBuild"] + "/"
-    
+        
+    // Add support for parent resource (component) to group all blobs together
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
     Seq.iteri(fun index file -> (blob {
-        name                 $"{appPrefix}blob{index}"
+        name                 $"{workloadShortName}blob{index}"
         source               { Path = file }.ToPulumiType
         accessTier           "Hot"
         contentType          (getContentType file[fablePublishDir.Length..])
         resourceType         "Block"
         resourceName         file[fablePublishDir.Length..]
-        storageAccountName   webContainer.StorageAccountName
+        storageAccountName   storage.Name
         storageContainerName webContainer.Name
-    } |> ignore))
-    
+    } |> ignore))    
+
+    //let speech =
+    //    Pulumi.FSharp.Azure.Cognitive.account {
+    //        name          $"cog-{appPrefix}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+    //        resourceGroup rg.Name
+    //        kind          "SpeechServices"
+    //        sttSku        { name "S0" }
+    //    }
 
     dict [
-        "IsFirstRun",              isFirstRun                      :> obj
-        "Hostname",                app.DefaultHostName             :> obj
-        "ResourceGroup",           group.Name                      :> obj
-        "StorageAccount",          storage.Name                    :> obj
-        "StorageConnectionString", connectionString                :> obj
-        apiManagementEndpoint,     apiManagement.GatewayUrl        :> obj
-        "ApiManagement",           apiManagement.Name              :> obj
-        "StaticWebsiteApi",        swApi.Name                      :> obj
-        "FunctionApi",             apiFunction.Name                :> obj
-        "ApplicationId",           spaAdApplication.ApplicationId  :> obj
-        "TenantId",                tenantId                        :> obj
-        "FunctionName",            app.Name                        :> obj
-      //"LetsEncryptAccountKey",   certificate.AccountKey          :> obj
-      //"Certificate",             certificate.Pem                 :> obj
-    ] |> Output.unsecret
+        //"IsFirstRun",              isFirstRun                      :> obj
+        //apiManagementEndpoint,     apiManagement.GatewayUrl        :> obj
+        //"LetsEncryptAccountKey",   certificate.AccountKey          :> obj
+        //"Certificate",             certificate.Pem                 :> obj
+    ]
 
 type bclList<'a> =
-    List<'a>
+    System.Collections.Generic.List<'a>
 
 let ignoreBlobSourceChanges (args : ResourceTransformationArgs) =
     if args.Resource.GetResourceType() = "azure:storage/blob:Blob" then
@@ -617,12 +603,12 @@ let ignoreBlobSourceChanges (args : ResourceTransformationArgs) =
     ResourceTransformationResult(args.Args, args.Options) |> Nullable
 
 let stackOptions =
-        StackOptions(
-            ResourceTransformations =
-                bclList([
-                    if Environment.GetEnvironmentVariable("AGENT_ID") = null then
-                        yield ResourceTransformation(ignoreBlobSourceChanges)
-                ]))
+    StackOptions(
+        ResourceTransformations =
+            bclList([
+                if Environment.GetEnvironmentVariable("AGENT_ID") = null then
+                    yield ResourceTransformation(ignoreBlobSourceChanges)
+            ]))
 
 [<EntryPoint>]
 let main _ =
