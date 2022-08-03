@@ -1,5 +1,5 @@
 module Pulumi.LetsEncrypt.Certificate
-
+(*
 open Pulumi.FSharp.Azure.Dns.Inputs
 open Pulumi.FSharp.Azure.Dns
 open Pulumi.FSharp.Outputs
@@ -80,4 +80,4 @@ type LetsEncryptCertificate(name, args : LetsEncryptCertificateArgs) =
     member this.Pem with get() = pemOutput and set(value) = pemOutput <- value
     
     [<Output("AccountKey")>]
-    member this.AccountKey with get() = accountKey and set(value) = accountKey <- value
+    member this.AccountKey with get() = accountKey and set(value) = accountKey <- value*)

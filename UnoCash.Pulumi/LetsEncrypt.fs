@@ -1,5 +1,5 @@
 module LetsEncrypt
-
+(*
 open System.Threading.Tasks
 open Certes.Acme.Resource
 open DnsClient.Protocol
@@ -139,4 +139,4 @@ let loadAccount server pemKey = async {
 
 let loadAccountFromFile server filePath =
     File.ReadAllText(filePath) |>
-    loadAccount server
+    loadAccount server*)

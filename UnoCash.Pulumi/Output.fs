@@ -90,6 +90,7 @@ output { do! resource }
 // Behind the scene it may .Id.Apply(?) or something better if possible
 *)
 
+(*
 module Output =
     let map (func : 'a -> 'b) (o : Pulumi.Output<'a>) =
         o.Apply func
@@ -109,3 +110,4 @@ module Output =
         
     let toTuple arg =
         map fst arg, map snd arg
+*)

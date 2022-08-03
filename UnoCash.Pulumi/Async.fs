@@ -1,5 +1,5 @@
 module Async
-
+(*
 let map f async' =
     async.Bind(async', f >> async.Return)
 
@@ -10,4 +10,4 @@ let zip (x : Async<'a>) (y : Async<'b>) : Async<'a * 'b> =
   
 
 type AsyncBuilder with
-   member _.MergeSources (x, y) = zip x y
+   member _.MergeSources (x, y) = zip x y *)

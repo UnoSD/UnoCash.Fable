@@ -1,17 +1,24 @@
 ﻿module Program
 
-open Pulumi.FSharp.Azure.ApiManagement.Inputs
+open Pulumi.FSharp.AzureNative.ApiManagement.Inputs
+open Pulumi.FSharp.AzureNative.Storage.Inputs
+open Pulumi.FSharp.AzureNative.ApiManagement
+open Pulumi.FSharp.AzureNative.Authorization
 open Pulumi.FSharp.NamingConventions.Azure
-open Pulumi.FSharp.Azure.ApiManagement
+open Pulumi.FSharp.AzureNative.Web.Inputs
+open Pulumi.FSharp.AzureNative.Resources
+open Pulumi.FSharp.AzureNative.Insights
+open Pulumi.FSharp.AzureNative.Storage
+open Pulumi.AzureNative.ApiManagement
 open Microsoft.AspNetCore.StaticFiles
 open Pulumi.AzureNative.Authorization
+open Pulumi.FSharp.AzureNative.Web
 open Pulumi.FSharp.AzureAD.Inputs
-open Pulumi.FSharp.Azure.Storage
+open Pulumi.AzureNative.Insights
 open Pulumi.AzureNative.Storage
 open Pulumi.AzureNative.Web
 open Pulumi.FSharp.AzureAD
 open Pulumi.FSharp.Outputs
-open Pulumi.FSharp.Output
 open Pulumi.FSharp.Config
 open Pulumi.FSharp.Assets
 open Pulumi.FSharp.Random
@@ -26,47 +33,57 @@ open Pulumi
 let workloadShortName = "ucsh"
 let apiManagementEndpointOutputName = "ApiManagementEndpoint"
 
+// Usually that's the AppId, but that would mean setting a value in the app after creation so means two runs,
+// let's avoid that with this.
+let faAdAppIdentifier = "apiapp"
+        
+// let storage = storage {}; let container = storage.container {}; let blob = container.blob {}; container.blob {}
+// ComputationalExpressions on instances
+
+// Add support for parent resource (component) to group all blobs together
+
 let infra () =
-    let stackOutputs =
-        StackReference(Deployment.Instance.StackName).Outputs
+    //let stackOutputs =
+    //    StackReference(Deployment.Instance.StackName).Outputs
         
     let group =
-        Pulumi.FSharp.AzureNative.Resources.resourceGroup {
+        resourceGroup {
             name $"rg-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
         }
     
     // It seems to work also without CORS policy, check it and fix it or remove this crap if not needed
-    let origins =
-        output {
-            let! outputs =
-                stackOutputs
-                
-            return match outputs.TryGetValue apiManagementEndpointOutputName with
-                   | true, endpoint -> $"http://localhost:8080, {endpoint}"
-                   | _              -> "http://localhost:8080"
-        }
+    //let origins =
+    //    output {
+    //        let! outputs =
+    //            stackOutputs
+    //            
+    //        return match outputs.TryGetValue apiManagementEndpointOutputName with
+    //               | true, endpoint -> $"http://localhost:8080, {endpoint}"
+    //               | _              -> "http://localhost:8080"
+    //    }
     
     let storage =
-        Pulumi.FSharp.AzureNative.Storage.storageAccount {
+        storageAccount {
             name                   $"sa{workloadShortName}{Deployment.Instance.StackName}{Region.shortName}001"
             resourceGroup          group.Name
             kind                   Kind.StorageV2
             
-            Pulumi.FSharp.AzureNative.Storage.Inputs.sku {
+            sku {
                 name SkuName.Standard_LRS
             }
         }
         
-    Pulumi.FSharp.AzureNative.Storage.blobServiceProperties {
+    blobServiceProperties {
         name             $"bsp-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
         blobServicesName "default"
         accountName      storage.Name
         resourceGroup    group.Name
         
-        Pulumi.FSharp.AzureNative.Storage.Inputs.corsRules {
+        corsRules {
             corsRules [
-                Pulumi.FSharp.AzureNative.Storage.Inputs.corsRule {
-                    allowedOrigins  origins
+                corsRule {
+                    //allowedOrigins  origins
+                    allowedOrigins  "http://localhost:8080"
                     allowedHeaders  "*"
                     allowedMethods  [ "PUT"; "OPTIONS" ]
                     exposedHeaders  "*"
@@ -76,51 +93,50 @@ let infra () =
         }
     }
     
-    Pulumi.FSharp.AzureNative.Storage.blobContainer {
-        name          "receipts"
+    blobContainer {
+        name          $"sac-receipts-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
         accountName   storage.Name
         containerName "receipts"
         resourceGroup group.Name
     }
     
-    Pulumi.FSharp.AzureNative.Storage.table {
-        name          "expense"
+    table {
+        name          $"sat-expenses-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
         tableName     "Expense"
         accountName   storage.Name
         resourceGroup group.Name
     }
         
     let webContainer =
-        Pulumi.FSharp.AzureNative.Storage.blobContainer {
-            name          "web"
+        blobContainer {
+            name          $"sac-web-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             accountName   storage.Name
             containerName "$web"
             resourceGroup group.Name
         }
             
     let buildContainer =
-        Pulumi.FSharp.AzureNative.Storage.blobContainer {
-            name               "build"
-            accountName storage.Name
+        blobContainer {
+            name          $"sac-build-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            accountName   storage.Name
             resourceGroup group.Name
         }
     
     let functionPlan =
-        Pulumi.FSharp.AzureNative.Web.appServicePlan {
-            name          $"asp-{workloadShortName}"
+        appServicePlan {
+            name          $"asp-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             resourceGroup group.Name
             kind          "FunctionApp"
             
-            Pulumi.FSharp.AzureNative.Web.Inputs.skuDescription {
+            skuDescription {
                 name "Y1"
-                //size "Y1"
                 tier "Dynamic"
             }
         }
 
     let apiBlob =
-        Pulumi.FSharp.AzureNative.Storage.blob {
-            name          $"{workloadShortName}api"
+        blob {
+            name          $"sab-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             accountName   storage.Name
             containerName buildContainer.Name
             resourceGroup group.Name
@@ -129,39 +145,42 @@ let infra () =
             BlobType.Block
         }
 
-    // let storage = storage {}; let container = storage.container {}; let blob = container.blob {}; container.blob {}
-    // ComputationalExpressions on instances
-
     let appInsights =
-        Pulumi.FSharp.AzureNative.Insights.``component`` {
-            name            $"appi-{workloadShortName}"
+        ``component`` {
+            name            $"appi-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             resourceGroup   group.Name
-            applicationType Pulumi.AzureNative.Insights.ApplicationType.Web
+            applicationType ApplicationType.Web
             kind            "web"
             retentionInDays 90
         }
         
     let apiManagement =
-        service {
-            name           $"apim-{workloadShortName}"
+        apiManagementService {
+            name           $"apim-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             resourceGroup  group.Name
             publisherEmail "info@uno.cash"
             publisherName  "UnoSD"
-            skuName        "Consumption_0"
             
-            serviceIdentity {
-                resourceType "SystemAssigned"
+            apiManagementServiceSkuProperties {
+                name     SkuType.Consumption
+                capacity 0
+            }
+            
+            apiManagementServiceIdentity {
+                resourceType ApimIdentityType.SystemAssigned
             }
         }
 
     logger {
-        name              "unocashapimlog"
-        apiManagementName apiManagement.Name
-        resourceGroup     group.Name
+        name          $"apimlogger-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        loggerId      "insight"
+        loggerType    LoggerType.ApplicationInsights
+        serviceName   apiManagement.Name
+        resourceGroup group.Name
         
-        loggerApplicationInsights {
-            instrumentationKey appInsights.InstrumentationKey
-        }
+        credentials   [
+            "instrumentationKey", appInsights.InstrumentationKey
+        ]
     }
         
     let webContainerUrl =
@@ -174,15 +193,15 @@ let infra () =
 
     let swApi =
         api {
-            name                 "unocashapimapi"
-            resourceName         "staticwebsite"
+            name                 $"apima-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            apiId                "staticwebsite"
             resourceGroup        group.Name
-            apiManagementName    apiManagement.Name
+            serviceName          apiManagement.Name
             displayName          "StaticWebsite"
-            protocols            [ "http"; "https" ]
+            protocols            [ Protocol.Http; Protocol.Https ]
             serviceUrl           webContainerUrl
             path                 ""
-            revision             "1"
+            apiRevision          "1"
             subscriptionRequired false
         }
     
@@ -194,17 +213,19 @@ let infra () =
         }
         
     apiPolicy {
-        name              "unocashapimapipolicy"
-        apiManagementName swApi.ApiManagementName
-        apiName           swApi.Name
-        resourceGroup     swApi.ResourceGroupName
-        xmlContent        swApiPolicyXml
+        name          $"apimap-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        policyId      $"apimap-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        serviceName   apiManagement.Name
+        apiId         swApi.Name
+        resourceGroup group.Name
+        value         swApiPolicyXml
+        format        PolicyContentFormat.Xml
     }
 
     let spaAdApplication =
         application {
-            name                    $"{workloadShortName}spaaadapp"
-            displayName             $"{workloadShortName}spaaadapp"
+            name                    $"app-spa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            displayName             $"app-spa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             
             groupMembershipClaims   "None"
             
@@ -257,65 +278,68 @@ let infra () =
 
     let getIndexOperation =
         apiOperation {
-            name              "unocashapimindexoperation"
-            resourceGroup     group.Name
-            apiManagementName apiManagement.Name
-            apiName           swApi.Name
-            method            "GET"
-            operationId       "get-index"
-            urlTemplate       "/"
-            displayName       "GET index"
+            name          $"apio-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            resourceGroup group.Name
+            serviceName   apiManagement.Name
+            apiId         swApi.Name
+            method        "GET"
+            operationId   "get-index"
+            urlTemplate   "/"
+            displayName   "GET index"
         }
     
     apiOperationPolicy {
-        name              "unocashapimindexoperationpolicy"
-        operationId       getIndexOperation.OperationId
-        apiManagementName getIndexOperation.ApiManagementName
-        apiName           getIndexOperation.ApiName
-        resourceGroup     getIndexOperation.ResourceGroupName
-        xmlContent        (policyFromFile "StaticWebsiteApimGetIndexOperationPolicy.xml")
+        name          $"apiop-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        policyId      $"apiop-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        operationId   getIndexOperation.Name
+        serviceName   apiManagement.Name
+        apiId         swApi.Name
+        resourceGroup group.Name
+        value         (policyFromFile "StaticWebsiteApimGetIndexOperationPolicy.xml")
     }
         
     let getOperation =
         apiOperation {
-            name              "unocashapimgetoperation"
-            resourceGroup     group.Name
-            apiManagementName apiManagement.Name
-            apiName           swApi.Name
-            method            "GET"
-            operationId       "get"
-            urlTemplate       "/*"     
-            displayName       "GET"
+            name          $"apio-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            resourceGroup group.Name
+            serviceName   apiManagement.Name
+            apiId         swApi.Name
+            method        "GET"
+            operationId   "get"
+            urlTemplate   "/*"     
+            displayName   "GET"
         }
     
     apiOperationPolicy {
-        name              "unocashapimgetoperationpolicy"
-        operationId       getOperation.OperationId
-        apiManagementName getOperation.ApiManagementName
-        apiName           getOperation.ApiName
-        resourceGroup     getOperation.ResourceGroupName
-        xmlContent        (policyFromFile "StaticWebsiteApimGetOperationPolicy.xml")
+        name          $"apiop-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        policyId      $"apiop-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        operationId   getOperation.Name
+        serviceName   apiManagement.Name
+        apiId         swApi.Name
+        resourceGroup group.Name
+        value         (policyFromFile "StaticWebsiteApimGetOperationPolicy.xml")
     }
     
     let postOperation =
         apiOperation {
-            name              "unocashapimpostoperation"
-            resourceGroup     group.Name
-            apiManagementName apiManagement.Name
-            apiName           swApi.Name
-            method            "POST"
-            operationId       "post-aad-token"
-            urlTemplate       "/"
-            displayName       "POST AAD token"
+            name          $"apio-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            resourceGroup group.Name
+            serviceName   apiManagement.Name
+            apiId         swApi.Name
+            method        "POST"
+            operationId   "post-aad-token"
+            urlTemplate   "/"
+            displayName   "POST AAD token"
         }
     
     apiOperationPolicy {
-        name              "unocashapimpostoperationpolicy"
-        operationId       postOperation.OperationId
-        apiManagementName postOperation.ApiManagementName
-        apiName           postOperation.ApiName
-        resourceGroup     postOperation.ResourceGroupName
-        xmlContent        (policyFromFile "StaticWebsiteApimPostOperationPolicy.xml")
+        name          $"apiop-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        policyId      $"apiop-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        operationId   postOperation.Name
+        serviceName   apiManagement.Name
+        apiId         swApi.Name
+        resourceGroup group.Name
+        value         (policyFromFile "StaticWebsiteApimPostOperationPolicy.xml")
     }
     
     let accountKey =
@@ -325,24 +349,21 @@ let infra () =
                 ResourceGroupName = group.Name
                 )).Apply(fun x -> x.Keys[0].Value)
     
-    let connectionString =
-        Output.Format($"DefaultEndpointsProtocol=https;AccountName={storage.Name};AccountKey={accountKey}")
-    
     let app =
-        Pulumi.FSharp.AzureNative.Web.webApp {
-            name                    $"{workloadShortName}app" // -func
-            kind                    "functionapp,linux"
-            resourceGroup           group.Name
-            serverFarmId            functionPlan.Id
+        webApp {
+            name          $"func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            kind          "functionapp,linux"
+            resourceGroup group.Name
+            serverFarmId  functionPlan.Id
             
-            Pulumi.FSharp.AzureNative.Web.Inputs.siteConfig {
-                Pulumi.FSharp.AzureNative.Web.Inputs.corsSettings {
+            siteConfig {
+                corsSettings {
                     allowedOrigins     apiManagement.GatewayUrl
                     supportCredentials true
                 }
             }
             
-            Pulumi.FSharp.AzureNative.Web.Inputs.managedServiceIdentity {
+            managedServiceIdentity {
                 ManagedServiceIdentityType.SystemAssigned
             }
         }
@@ -352,12 +373,12 @@ let infra () =
             GetClientConfig.InvokeAsync()
             
         let! uuid =
-            (randomUuid { name $"raid-apim-to-sa-ucash-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+            (randomUuid { name $"raid-apim-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
         
         let ``Storage Blob Data Reader`` = "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
         
-        Pulumi.FSharp.AzureNative.Authorization.roleAssignment {
-            name               $"ra-apim-to-sa-ucash-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        roleAssignment {
+            name               $"ra-apim-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             roleAssignmentName uuid
             scope              storage.Id
             roleDefinitionId   $"/subscriptions/{result.SubscriptionId}/providers/Microsoft.Authorization/roleDefinitions/{``Storage Blob Data Reader``}"
@@ -368,26 +389,19 @@ let infra () =
         return ()
     }
     
-    // Usually that's the AppId, but that would mean setting a value in the app after creation so means two runs, let's
-    // avoid that with this.
-    let faAdAppIdentifier =
-        //(randomUuid { name $"ident-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
-        "apiapp"
-    
     // Currently we use two app, one to access the site and one between APIm and Function
     // We could use the same so that the user can access the functions with their own credentials and not
     // using APIm on their behalf. Problem with this approach is that no one will then stop them from hammering
     // the function. the only way would be to restrict IP range outbound of APIM, but that's not possible in consumption
-    // so now APIM authenticates to the function as a service and the jwtToken cookie is used by the app to get the right
-    // user (user cannot tamper the token and change user because it's validated at APIM level first)
+    // so now APIM authenticates to the function as a service and the jwtToken cookie is used by the app to get the
+    // right user (user cannot tamper the token and change user because it's validated at APIM level first)
     let faAdApplication =
         application {
-            name                    $"{workloadShortName}faaadapp"
-            displayName             $"{workloadShortName}faaadapp"
+            name                    $"app-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            displayName             $"app-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             
-            // Web
             //replyUrls [
-            //    input "https://unocashapp4e650e1a.azurewebsites.net/.auth/login/aad/callback"
+            //    input "https://<func hostname>/.auth/login/aad/callback"
             //]            
             
             identifierUris [
@@ -395,45 +409,43 @@ let infra () =
             ]
             
             (*
-	"requiredResourceAccess": [
-		{
-			"resourceAppId": "00000003-0000-0000-c000-000000000000",
-			"resourceAccess": [
-				{
-					"id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
-					"type": "Scope"
-				}
-			]
-		}
-        *)
-        
-        // 	"signInUrl": "https://unocashapp4e650e1a.azurewebsites.net",
+	            "requiredResourceAccess": [
+		            {
+			            "resourceAppId": "00000003-0000-0000-c000-000000000000",
+			            "resourceAccess": [
+				            {
+					            "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
+					            "type": "Scope"
+				            }
+			            ]
+		            },
+		        "signInUrl": "https://unocashapp4e650e1a.azurewebsites.net",
+            *)
         }
+        
     servicePrincipal {
-        name "sp"
-        applicationId faAdApplication.ApplicationId
-        // assugbnebt required no
-    // visibile to users yes
-    // enabled for users to sign in yes    
+        name          $"app-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        applicationId faAdApplication.ApplicationId    
     }
     
     let faAdApplicationSecret =
         applicationPassword {
-            name "func-aad-secret"
+            name                $"apps-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            displayName         $"apps-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             applicationObjectId faAdApplication.ObjectId
-            displayName "func-secret"
         }
     
-    Pulumi.FSharp.AzureNative.Web.webAppApplicationSettings {
-        name $"{workloadShortName}appsettings"
-        resourceName app.Name
+    webAppApplicationSettings {
+        name          $"func-sett-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        resourceName  app.Name
         resourceGroup group.Name
+        
         properties [
             "AzureWebJobsStorage__accountName"        , io storage.Name
-            "FUNCTIONS_WORKER_RUNTIME"                , input "dotnet" // ?
+            "FUNCTIONS_WORKER_RUNTIME"                , input "dotnet"
             "WEBSITE_RUN_FROM_PACKAGE"                , io apiBlob.Url
             "APPINSIGHTS_INSTRUMENTATIONKEY"          , io appInsights.InstrumentationKey // MI
-            "StorageAccountConnectionString"          , io connectionString // APP SETT?
+            "StorageAccountConnectionString"          , io (Output.Format($"DefaultEndpointsProtocol=https;AccountName={storage.Name};AccountKey={accountKey}")) // Replace with MI in app
             "FormRecognizerKey"                       , input config["FormRecognizerKey"] // MI?
             "FormRecognizerEndpoint"                  , input config["FormRecognizerEndpoint"]
             "FUNCTIONS_EXTENSION_VERSION"             , input "~4"
@@ -446,12 +458,12 @@ let infra () =
             GetClientConfig.InvokeAsync()
             
         let! uuid =
-            (randomUuid { name $"raakstoacr-ucash-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+            (randomUuid { name $"raid-func-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
         
         let ``Storage Blob Data Owner`` = "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
         
-        Pulumi.FSharp.AzureNative.Authorization.roleAssignment {
-            name               $"ra-func-to-sa-aks-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        roleAssignment {
+            name               $"ra-func-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
             roleAssignmentName uuid
             scope              storage.Id
             roleDefinitionId   $"/subscriptions/{result.SubscriptionId}/providers/Microsoft.Authorization/roleDefinitions/{``Storage Blob Data Owner``}"
@@ -464,42 +476,42 @@ let infra () =
     
     let apiFunction =
         api {
-            name                 $"{workloadShortName}apimapifunction"
-            resourceName         "api"
+            name                 $"apima-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            apiId                "api"
             path                 "api"
             resourceGroup        group.Name
-            apiManagementName    apiManagement.Name
+            serviceName          apiManagement.Name
             displayName          "API"
-            protocols            [ "https" ]
+            protocols            [ Protocol.Https ]
             serviceUrl           (app.DefaultHostName.Apply (sprintf "https://%s/api"))
             path                 ""
-            revision             "1"
+            apiRevision          "1"
             subscriptionRequired false
         }
 
-    Pulumi.FSharp.AzureNative.Web.webAppAuthSettingsV2 {
-        name "authsett"
-        resourceName app.Name
+    webAppAuthSettingsV2 {
+        name          $"func-auth-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        resourceName  app.Name
         resourceGroup group.Name
         
-        Pulumi.FSharp.AzureNative.Web.Inputs.globalValidation {
+        globalValidation {
             requireAuthentication true
             UnauthenticatedClientActionV2.Return403
         }
         
-        Pulumi.FSharp.AzureNative.Web.Inputs.identityProviders {
-            Pulumi.FSharp.AzureNative.Web.Inputs.azureActiveDirectory {
+        identityProviders {
+            azureActiveDirectory {
                 enabled true
                 
-                Pulumi.FSharp.AzureNative.Web.Inputs.azureActiveDirectoryRegistration {
+                azureActiveDirectoryRegistration {
                     clientId faAdApplication.ApplicationId
                     openIdIssuer (Output.Format($"https://sts.windows.net/{tenantId}/v2.0"))
                     clientSecretSettingName "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
                 }
                 
-                Pulumi.FSharp.AzureNative.Web.Inputs.azureActiveDirectoryValidation {
+                azureActiveDirectoryValidation {
                     allowedAudiences [
-                        Output.Format($"api://{faAdAppIdentifier}")
+                        $"api://{faAdAppIdentifier}"
                     ]
                 }
             }
@@ -521,23 +533,25 @@ let infra () =
         }
 
     apiPolicy {
-        name              $"{workloadShortName}apimapifunctionpolicy"
-        apiName           apiFunction.Name
-        apiManagementName apiFunction.ApiManagementName
-        resourceGroup     apiFunction.ResourceGroupName
-        xmlContent        apiPolicyFromFile
+        name          $"apimap-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        policyId      $"apimap-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        apiId         apiFunction.Name
+        serviceName   apiManagement.Name
+        resourceGroup group.Name
+        value         apiPolicyFromFile
+        format        PolicyContentFormat.Rawxml
     }
     
     let apiOperation (httpMethod : string) =
         apiOperation {
-            name              $"{workloadShortName}apimapifunction{httpMethod.ToLower()}"
-            resourceGroup     group.Name
-            apiManagementName apiManagement.Name
-            apiName           apiFunction.Name
-            method            httpMethod
-            operationId       (httpMethod.ToLower())
-            urlTemplate       "/*"     
-            displayName       httpMethod
+            name          $"apio-func-{httpMethod.ToLower()}-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            resourceGroup group.Name
+            serviceName   apiManagement.Name
+            apiId         apiFunction.Name
+            method        httpMethod
+            operationId   (httpMethod.ToLower())
+            urlTemplate   "/*"     
+            displayName   httpMethod
         }
     
     [ "GET"; "POST"; "DELETE"; "PUT" ] |>
@@ -547,12 +561,14 @@ let infra () =
         let! url = apiManagement.GatewayUrl
         
         blob {
-            name                 $"{workloadShortName}webconfig"
-            resourceName         "apibaseurl"
-            storageAccountName   storage.Name
-            storageContainerName webContainer.Name
-            resourceType         "Block"
-            source               { Text = url }.ToPulumiType
+            name          $"sab-webconfig-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            blobName      "apibaseurl"
+            accountName   storage.Name
+            containerName webContainer.Name
+            resourceGroup group.Name
+            source        { Text = url }.ToPulumiType
+            
+            BlobType.Block
         }
         
         return ()
@@ -566,18 +582,19 @@ let infra () =
     let fablePublishDir =
         config["FableBuild"] + "/"
         
-    // Add support for parent resource (component) to group all blobs together
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
-    Seq.iteri(fun index file -> (blob {
-        name                 $"{workloadShortName}blob{index}"
-        source               { Path = file }.ToPulumiType
-        accessTier           "Hot"
-        contentType          (getContentType file[fablePublishDir.Length..])
-        resourceType         "Block"
-        resourceName         file[fablePublishDir.Length..]
-        storageAccountName   storage.Name
-        storageContainerName webContainer.Name
-    } |> ignore))    
+    Seq.mapi(fun index file -> (blob {
+        name          $"sab-{index}-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        source        { Path = file }.ToPulumiType
+        contentType   (getContentType file[fablePublishDir.Length..])
+        blobName      file[fablePublishDir.Length..]
+        accountName   storage.Name
+        containerName webContainer.Name
+        resourceGroup group.Name
+        
+        BlobType.Block
+        BlobAccessTier.Hot
+    })) |> ignore
 
     //let speech =
     //    Pulumi.FSharp.Azure.Cognitive.account {
