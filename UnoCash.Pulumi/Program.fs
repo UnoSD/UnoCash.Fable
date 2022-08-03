@@ -9,7 +9,6 @@ open Pulumi.FSharp.Azure.AppService
 open Pulumi.FSharp.AzureAD.Inputs
 open Pulumi.FSharp.Azure.Storage
 open System.Collections.Generic
-open Pulumi.Azure.AppService
 open Pulumi.FSharp.AzureAD
 open Pulumi.FSharp.Outputs
 open Pulumi.FSharp.Output
@@ -21,7 +20,9 @@ open Pulumi.FSharp
 open System.IO
 open System
 open Pulumi
-//open Pulumi.FSharp.Naming
+open Pulumi.FSharp.NamingConventions.Azure
+open Pulumi.FSharp.Random
+open Pulumi.AzureNative.Authorization
 
 type ParsedSasToken =
     | Valid of string * DateTime
@@ -35,17 +36,7 @@ type ParsedSasToken =
 [<Literal>]
 let appPrefix = "unocash"
 
-let infra() =
-    let rec debug () =
-        if (Option.ofObj (Environment.GetEnvironmentVariable("DEBUG"))
-            |> Option.defaultValue "") <> "yes" || Debugger.IsAttached then
-            ()
-        else
-            Log.Warn(Process.GetCurrentProcess().Id.ToString())
-            Thread.Sleep(100)
-            debug ()            
-    debug ()
-            
+let infra() =            
     let group =
         Pulumi.FSharp.AzureNative.Resources.resourceGroup {
             name $"rg-{appPrefix}"
@@ -150,18 +141,6 @@ let infra() =
             resourceType         "Block"
             source               { ArchivePath = config["ApiBuild"] }.ToPulumiType
         }
-    
-    let codeBlobUrl =
-        Pulumi.AzureNative.Storage.ListStorageAccountSAS.Invoke(
-            Pulumi.AzureNative.Storage.ListStorageAccountSASInvokeArgs(
-                    AccountName = storage.Name,
-                    ResourceGroupName = group.Name,
-                    Permissions = Pulumi.AzureNative.Storage.Permissions.R,
-                    Services = Pulumi.AzureNative.Storage.Services.B,
-                    ResourceTypes = Pulumi.AzureNative.Storage.SignedResourceTypes.O,
-                    SharedAccessExpiryTime = DateTime.Now.AddDays(1.).ToString("u").Replace(' ', 'T')
-                )
-            ).Apply<string>(fun x -> Output.Format($"{apiBlob.Url}{x.AccountSasToken}"))
 
     let appInsights =
         insights {
@@ -215,71 +194,12 @@ let infra() =
             revision             "1"
             subscriptionRequired false
         }
-        
-    let sasExpirationOutputName = "SasTokenExpiration"
-    let sasTokenOutputName = "SasToken"
-    
-    let webContainerExpiry = DateTime.Now.AddYears(1)
-    
-    let webContainerToken =
-        Pulumi.AzureNative.Storage.ListStorageAccountSAS.Invoke(
-            Pulumi.AzureNative.Storage.ListStorageAccountSASInvokeArgs(
-                    AccountName = storage.Name,
-                    ResourceGroupName = group.Name,
-                    Permissions = Pulumi.AzureNative.Storage.Permissions.R,
-                    Services = Pulumi.AzureNative.Storage.Services.B,
-                    ResourceTypes = Pulumi.AzureNative.Storage.SignedResourceTypes.C,
-                    SharedAccessExpiryTime = webContainerExpiry.ToString("u").Replace(' ', 'T')
-                )
-            ).Apply<string>(fun x -> x.AccountSasToken)
-    
-    let token =
-        secretOutput {
-            let! previousOutputs =
-                stackOutputs
-
-            let tokenValidity =
-                let getTokenIfValid (expirationString : string) =
-                    match DateTime.TryParse expirationString with
-                    | true, x when x > DateTime.Now -> Valid (
-                                                           previousOutputs[sasTokenOutputName] :?> string,
-                                                           x
-                                                       )
-                    | _                             -> ExpiredOrInvalid
-                
-                match previousOutputs.TryGetValue sasExpirationOutputName with
-                | true, (:? string as exp) -> getTokenIfValid exp
-                | _                        -> Missing
-            
-            return!
-                match tokenValidity with
-                | Missing
-                | ExpiredOrInvalid     -> webContainerToken |> (fun x -> x.Apply(fun y -> ("?" + y, webContainerExpiry)))
-                | Valid (sasToken, e ) -> output { return sasToken, e }
-        }
     
     let swApiPolicyXml =
         output {
-            let! tokenValue, _ =
-                token
-                
             let! url = apiManagement.GatewayUrl
-                
-            let apiPolicyXml =
-                let queryString =
-                    tokenValue.Substring(1).Split('&') |>
-                    Array.map ((fun pair -> pair.Split('=')) >>
-                               (function | [| key; value |] -> (key, value) | _ -> failwith "Invalid query string")) |>
-                    Map.ofArray
-                
-                String.Format(File.ReadAllText("StaticWebsiteApimApiPolicy.xml"), [|
-                    yield url :> obj
-                    
-                    yield! ["sv";"ss";"srt";"se";"sp";"sig"] |> List.map (fun x -> (Map.find x queryString) |> box)
-                    //yield! ["sv";"sr";"st";"se";"sp";"spr";"sig"] |> List.map (fun x -> (Map.find x queryString) |> box)
-                |])
-
-            return apiPolicyXml
+            
+            return String.Format(File.ReadAllText("StaticWebsiteApimApiPolicy.xml"), url)
         }
         
     apiPolicy {
@@ -411,30 +331,81 @@ let infra() =
         Output.Format($"DefaultEndpointsProtocol=https;AccountName={storage.Name};AccountKey={accountKey}")
     
     let app =
-        functionApp {
+        Pulumi.FSharp.AzureNative.Web.webApp {
             name                    $"{appPrefix}app" // -func
-            version                 "~3"
+            kind                    "functionapp,linux"
             resourceGroup           group.Name
-            appServicePlanId        functionPlan.Id
-            storageAccountName      storage.Name
-            storageAccountAccessKey accountKey
+            serverFarmId            functionPlan.Id
             
-            appSettings     [
-                "runtime"                        , input "dotnet"
-                "WEBSITE_RUN_FROM_PACKAGE"       , io codeBlobUrl
-                "APPINSIGHTS_INSTRUMENTATIONKEY" , io appInsights.InstrumentationKey
-                "StorageAccountConnectionString" , io connectionString
-                "FormRecognizerKey"              , input config["FormRecognizerKey"]
-                "FormRecognizerEndpoint"         , input config["FormRecognizerEndpoint"]
-            ]
-            
-            functionAppSiteConfig {
-                functionAppSiteConfigCors {
+            Pulumi.FSharp.AzureNative.Web.Inputs.siteConfig {
+                Pulumi.FSharp.AzureNative.Web.Inputs.corsSettings {
                     allowedOrigins     apiManagement.GatewayUrl
                     supportCredentials true
                 }
             }
+            
+            Pulumi.FSharp.AzureNative.Web.Inputs.managedServiceIdentity {
+                Pulumi.AzureNative.Web.ManagedServiceIdentityType.SystemAssigned
+            }
         }
+    
+    output {
+        let! result =
+            GetClientConfig.InvokeAsync()
+            
+        let! uuid =
+            (randomUuid { name $"raid-apim-to-sa-ucash-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+        
+        let ``Storage Blob Data Reader`` = "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
+        
+        Pulumi.FSharp.AzureNative.Authorization.roleAssignment {
+            name               $"ra-apim-to-sa-ucash-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            roleAssignmentName uuid
+            scope              storage.Id
+            roleDefinitionId   $"/subscriptions/{result.SubscriptionId}/providers/Microsoft.Authorization/roleDefinitions/{``Storage Blob Data Reader``}"
+            principalId        (apiManagement.Identity |> apply (fun x -> x.PrincipalId))
+            principalType      PrincipalType.ServicePrincipal
+        }
+        
+        return ()
+    }
+    
+    Pulumi.FSharp.AzureNative.Web.webAppApplicationSettings {
+        name $"{appPrefix}appsettings"
+        resourceName app.Name
+        resourceGroup group.Name
+        properties [
+            "AzureWebJobsStorage__accountName", io storage.Name
+            "FUNCTIONS_WORKER_RUNTIME"        , input "dotnet" // ?
+            "WEBSITE_RUN_FROM_PACKAGE"        , io apiBlob.Url
+            "APPINSIGHTS_INSTRUMENTATIONKEY"  , io appInsights.InstrumentationKey // MI
+            "StorageAccountConnectionString"  , io connectionString // APP SETT?
+            "FormRecognizerKey"               , input config["FormRecognizerKey"] // MI?
+            "FormRecognizerEndpoint"          , input config["FormRecognizerEndpoint"]
+            "FUNCTIONS_EXTENSION_VERSION"     , input "~4"
+        ]
+    }
+
+    output {
+        let! result =
+            GetClientConfig.InvokeAsync()
+            
+        let! uuid =
+            (randomUuid { name $"raakstoacr-ucash-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+        
+        let ``Storage Blob Data Owner`` = "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
+        
+        Pulumi.FSharp.AzureNative.Authorization.roleAssignment {
+            name               $"ra-func-to-sa-aks-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            roleAssignmentName uuid
+            scope              storage.Id
+            roleDefinitionId   $"/subscriptions/{result.SubscriptionId}/providers/Microsoft.Authorization/roleDefinitions/{``Storage Blob Data Owner``}"
+            principalId        (app.Identity |> apply (fun x -> x.PrincipalId))
+            principalType      PrincipalType.ServicePrincipal
+        }
+        
+        return ()
+    }
     
     let apiFunction =
         api {
@@ -445,50 +416,19 @@ let infra() =
             apiManagementName    apiManagement.Name
             displayName          "API"
             protocols            [ "https" ]
-            serviceUrl           (app.DefaultHostname.Apply (sprintf "https://%s/api"))
+            serviceUrl           (app.DefaultHostName.Apply (sprintf "https://%s/api"))
             path                 ""
             revision             "1"
             subscriptionRequired false
         }
-    
-    let masterKey =
-        output {
-            let! functionAppName = app.Name
-            let! resourceGroupName = app.ResourceGroupName
-            let! _ = app.Id
-            
-            let! res = GetFunctionAppHostKeys.InvokeAsync(GetFunctionAppHostKeysArgs(Name = functionAppName,
-                                                                                     ResourceGroupName = resourceGroupName))
-            
-            return res.MasterKey
-        }    
-    
-    let nv =
-        namedValue {
-            name              $"{appPrefix}apimnvfk"
-            displayName       "FunctionKey"
-            apiManagementName apiManagement.Name
-            resourceGroup     apiManagement.ResourceGroupName
-            secret            true
-            value             masterKey
-        }
-    
-    
-    // TODO: Fix this, we should pass the key name instead of creating this fake dependency
-    output {
-        let! _ = nv.DisplayName
-            
-        apiPolicy {
-            name              $"{appPrefix}apimapifunctionpolicy"
-            apiName           apiFunction.Name
-            apiManagementName apiFunction.ApiManagementName
-            resourceGroup     apiFunction.ResourceGroupName
-            xmlContent        (policyFromFile "APIApimApiPolicy.xml")           
-        }
-        
-        return 0
-    }
 
+    apiPolicy {
+        name              $"{appPrefix}apimapifunctionpolicy"
+        apiName           apiFunction.Name
+        apiManagementName apiFunction.ApiManagementName
+        resourceGroup     apiFunction.ResourceGroupName
+        xmlContent        (policyFromFile "APIApimApiPolicy.xml")           
+    }
     
     let apiOperation (httpMethod : string) =
         apiOperation {
@@ -515,6 +455,7 @@ let infra() =
             storageContainerName webContainer.Name
             resourceType         "Block"
             source               { Text = url }.ToPulumiType
+            // parent // Add support for parent to group all blobs together
         }
         
         return 0
@@ -540,21 +481,10 @@ let infra() =
         storageContainerName webContainer.Name
     } |> ignore))
     
-    let sasExpiry =
-        output {
-            let! _, expiry = token            
-            return expiry.ToString("u")
-        }
-    
-    let getExpensesUrl =
-        Output.Format($"https://{app.DefaultHostname}/api/GetExpenses?account=Current&code={masterKey}")
-    
+
     dict [
-        
-        "CODEBLOBURL", codeBlobUrl :> obj
-        
         "IsFirstRun",              isFirstRun                      :> obj
-        "Hostname",                app.DefaultHostname             :> obj
+        "Hostname",                app.DefaultHostName             :> obj
         "ResourceGroup",           group.Name                      :> obj
         "StorageAccount",          storage.Name                    :> obj
         "StorageConnectionString", connectionString                :> obj
@@ -565,12 +495,6 @@ let infra() =
         "ApplicationId",           spaAdApplication.ApplicationId  :> obj
         "TenantId",                tenantId                        :> obj
         "FunctionName",            app.Name                        :> obj
-        "GetExpensesUrl",          getExpensesUrl                  :> obj
-                                                                              
-        // Outputs to read on next deployment to check for changes            
-        sasTokenOutputName,        token.Apply fst                 :> obj
-        sasExpirationOutputName,   sasExpiry                       :> obj
-                                                                   
       //"LetsEncryptAccountKey",   certificate.AccountKey          :> obj
       //"Certificate",             certificate.Pem                 :> obj
     ] |> Output.unsecret
@@ -604,7 +528,7 @@ let main _ =
           Option.ofObj |>
           Option.map (fun x -> x.ToLower()) with
     | Some "true"
-    | Some "1"    -> printf "Awaiting debugger to attach to the process"
+    | Some "1"    -> Log.Warn $"Awaiting debugger to attach to the process: {Process.GetCurrentProcess().Id}"
                      waitForDebugger ()
     | _           -> ()
 

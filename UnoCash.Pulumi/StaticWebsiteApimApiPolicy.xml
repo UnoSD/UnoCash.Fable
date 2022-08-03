@@ -26,29 +26,9 @@
 
         </choose>
 
-        <set-query-parameter name="sv">
-            <value>{1}</value>
-        </set-query-parameter>
-
-        <set-query-parameter name="ss">
-            <value>{2}</value>
-        </set-query-parameter>
-
-        <set-query-parameter name="srt">
-            <value>{3}</value>
-        </set-query-parameter>
-
-        <set-query-parameter name="se">
-            <value>{4}</value>
-        </set-query-parameter>
-
-        <set-query-parameter name="sp">
-            <value>{5}</value>
-        </set-query-parameter>
-
-        <set-query-parameter name="sig">
-            <value>{6}</value>
-        </set-query-parameter>
+        <set-header name="x-ms-version"><value>2018-11-09</value></set-header>
+    
+        <authentication-managed-identity resource="https://storage.azure.com/"/>
 
         <rate-limit calls="100"
                     renewal-period="300" />
