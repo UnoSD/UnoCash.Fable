@@ -2,8 +2,6 @@
 
 open Pulumi.FSharp.Azure.ApiManagement.Inputs
 open Pulumi.FSharp.Azure.AppService.Inputs
-open Pulumi.FSharp.AzureStorageSasToken
-open Pulumi.FSharp.Azure.Storage.Inputs
 open Pulumi.FSharp.Azure.ApiManagement
 open Microsoft.AspNetCore.StaticFiles
 open Pulumi.FSharp.Azure.AppInsights
@@ -11,7 +9,6 @@ open Pulumi.FSharp.Azure.AppService
 open Pulumi.FSharp.AzureAD.Inputs
 open Pulumi.FSharp.Azure.Storage
 open System.Collections.Generic
-open Pulumi.FSharp.Azure.Core
 open Pulumi.Azure.AppService
 open Pulumi.FSharp.AzureAD
 open Pulumi.FSharp.Outputs
@@ -24,6 +21,7 @@ open Pulumi.FSharp
 open System.IO
 open System
 open Pulumi
+//open Pulumi.FSharp.Naming
 
 type ParsedSasToken =
     | Valid of string * DateTime
@@ -38,14 +36,32 @@ type ParsedSasToken =
 let appPrefix = "unocash"
 
 let infra() =
+    let rec debug () =
+        if (Option.ofObj (Environment.GetEnvironmentVariable("DEBUG"))
+            |> Option.defaultValue "") <> "yes" || Debugger.IsAttached then
+            ()
+        else
+            Log.Warn(Process.GetCurrentProcess().Id.ToString())
+            Thread.Sleep(100)
+            debug ()            
+    debug ()
+            
     let group =
-        resourceGroup {
+        Pulumi.FSharp.AzureNative.Resources.resourceGroup {
             name $"rg-{appPrefix}"
         }
     
     let stackOutputs =
         StackReference(Deployment.Instance.StackName).Outputs
    
+    //let speech =
+    //    Pulumi.FSharp.Azure.Cognitive.account {
+    //        name          $"cog-{appPrefix}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+    //        resourceGroup rg.Name
+    //        kind          "SpeechServices"
+    //        sttSku        { name "S0" }
+    //    }
+    
     let apiManagementEndpoint =
         "ApiManagementEndpoint"
     
@@ -61,24 +77,34 @@ let infra() =
         Output.toTuple
     
     let storage =
-        account {
+        Pulumi.FSharp.AzureNative.Storage.storageAccount {
             name                   $"sa{appPrefix}"
             resourceGroup          group.Name
-            accountReplicationType "LRS"
-            accountTier            "Standard"
+            kind                   Pulumi.AzureNative.Storage.Kind.StorageV2
             
-            accountBlobProperties {
-                corsRules [
-                    accountBlobPropertiesCorsRule {
-                        allowedOrigins  origins
-                        allowedHeaders  "*"
-                        allowedMethods  [ "PUT"; "OPTIONS" ]
-                        exposedHeaders  "*"
-                        maxAgeInSeconds 5
-                    }
-                ]
+            Pulumi.FSharp.AzureNative.Storage.Inputs.sku {
+                name Pulumi.AzureNative.Storage.SkuName.Standard_LRS
             }
         }
+        
+    Pulumi.FSharp.AzureNative.Storage.blobServiceProperties {
+        name "blob-cors"
+        blobServicesName "default"
+        accountName storage.Name
+        resourceGroup group.Name
+        
+        Pulumi.FSharp.AzureNative.Storage.Inputs.corsRules {
+            corsRules [
+                Pulumi.FSharp.AzureNative.Storage.Inputs.corsRule {
+                    allowedOrigins  origins
+                    allowedHeaders  "*"
+                    allowedMethods  [ "PUT"; "OPTIONS" ]
+                    exposedHeaders  "*"
+                    maxAgeInSeconds 5
+                }
+            ]
+        }
+    }
         
     container {
         name               "receipts"
@@ -126,10 +152,16 @@ let infra() =
         }
     
     let codeBlobUrl =
-        sasToken {
-            account storage
-            blob    apiBlob
-        }
+        Pulumi.AzureNative.Storage.ListStorageAccountSAS.Invoke(
+            Pulumi.AzureNative.Storage.ListStorageAccountSASInvokeArgs(
+                    AccountName = storage.Name,
+                    ResourceGroupName = group.Name,
+                    Permissions = Pulumi.AzureNative.Storage.Permissions.R,
+                    Services = Pulumi.AzureNative.Storage.Services.B,
+                    ResourceTypes = Pulumi.AzureNative.Storage.SignedResourceTypes.O,
+                    SharedAccessExpiryTime = DateTime.Now.AddDays(1.).ToString("u").Replace(' ', 'T')
+                )
+            ).Apply<string>(fun x -> Output.Format($"{apiBlob.Url}{x.AccountSasToken}"))
 
     let appInsights =
         insights {
@@ -164,10 +196,10 @@ let infra() =
         
     let webContainerUrl =
         output {
-            let! blobEndpoint = storage.PrimaryBlobEndpoint
+            let! endpoints = storage.PrimaryEndpoints
             let! containerName = webContainer.Name
             
-            return blobEndpoint + containerName
+            return endpoints.Blob + containerName
         }
 
     let swApi =
@@ -186,6 +218,20 @@ let infra() =
         
     let sasExpirationOutputName = "SasTokenExpiration"
     let sasTokenOutputName = "SasToken"
+    
+    let webContainerExpiry = DateTime.Now.AddYears(1)
+    
+    let webContainerToken =
+        Pulumi.AzureNative.Storage.ListStorageAccountSAS.Invoke(
+            Pulumi.AzureNative.Storage.ListStorageAccountSASInvokeArgs(
+                    AccountName = storage.Name,
+                    ResourceGroupName = group.Name,
+                    Permissions = Pulumi.AzureNative.Storage.Permissions.R,
+                    Services = Pulumi.AzureNative.Storage.Services.B,
+                    ResourceTypes = Pulumi.AzureNative.Storage.SignedResourceTypes.C,
+                    SharedAccessExpiryTime = webContainerExpiry.ToString("u").Replace(' ', 'T')
+                )
+            ).Apply<string>(fun x -> x.AccountSasToken)
     
     let token =
         secretOutput {
@@ -208,17 +254,8 @@ let infra() =
             return!
                 match tokenValidity with
                 | Missing
-                | ExpiredOrInvalid      -> let expiry = DateTime.Now.AddYears(1)
-                                           sasToken {
-                                               account    storage
-                                               container  webContainer
-                                               duration   {
-                                                   From = DateTime.Now
-                                                   To   = expiry
-                                               }
-                                               permission Read
-                                           } |> (fun x -> x.Apply(fun y -> (y, expiry)))
-                 | Valid (sasToken, e ) -> output { return sasToken, e }
+                | ExpiredOrInvalid     -> webContainerToken |> (fun x -> x.Apply(fun y -> ("?" + y, webContainerExpiry)))
+                | Valid (sasToken, e ) -> output { return sasToken, e }
         }
     
     let swApiPolicyXml =
@@ -238,7 +275,8 @@ let infra() =
                 String.Format(File.ReadAllText("StaticWebsiteApimApiPolicy.xml"), [|
                     yield url :> obj
                     
-                    yield! ["sv";"sr";"st";"se";"sp";"spr";"sig"] |> List.map (fun x -> (Map.find x queryString) |> box)
+                    yield! ["sv";"ss";"srt";"se";"sp";"sig"] |> List.map (fun x -> (Map.find x queryString) |> box)
+                    //yield! ["sv";"sr";"st";"se";"sp";"spr";"sig"] |> List.map (fun x -> (Map.find x queryString) |> box)
                 |])
 
             return apiPolicyXml
@@ -362,6 +400,16 @@ let infra() =
         xmlContent        (policyFromFile "StaticWebsiteApimPostOperationPolicy.xml")
     }
     
+    let accountKey =
+        Pulumi.AzureNative.Storage.ListStorageAccountKeys.Invoke(
+            Pulumi.AzureNative.Storage.ListStorageAccountKeysInvokeArgs(
+                AccountName = storage.Name,
+                ResourceGroupName = group.Name
+                )).Apply(fun x -> x.Keys[0].Value)
+    
+    let connectionString =
+        Output.Format($"DefaultEndpointsProtocol=https;AccountName={storage.Name};AccountKey={accountKey}")
+    
     let app =
         functionApp {
             name                    $"{appPrefix}app" // -func
@@ -369,13 +417,13 @@ let infra() =
             resourceGroup           group.Name
             appServicePlanId        functionPlan.Id
             storageAccountName      storage.Name
-            storageAccountAccessKey storage.PrimaryAccessKey
+            storageAccountAccessKey accountKey
             
             appSettings     [
                 "runtime"                        , input "dotnet"
                 "WEBSITE_RUN_FROM_PACKAGE"       , io codeBlobUrl
                 "APPINSIGHTS_INSTRUMENTATIONKEY" , io appInsights.InstrumentationKey
-                "StorageAccountConnectionString" , io storage.PrimaryConnectionString
+                "StorageAccountConnectionString" , io connectionString
                 "FormRecognizerKey"              , input config["FormRecognizerKey"]
                 "FormRecognizerEndpoint"         , input config["FormRecognizerEndpoint"]
             ]
@@ -502,11 +550,14 @@ let infra() =
         Output.Format($"https://{app.DefaultHostname}/api/GetExpenses?account=Current&code={masterKey}")
     
     dict [
+        
+        "CODEBLOBURL", codeBlobUrl :> obj
+        
         "IsFirstRun",              isFirstRun                      :> obj
         "Hostname",                app.DefaultHostname             :> obj
         "ResourceGroup",           group.Name                      :> obj
         "StorageAccount",          storage.Name                    :> obj
-        "StorageConnectionString", storage.PrimaryConnectionString :> obj
+        "StorageConnectionString", connectionString                :> obj
         apiManagementEndpoint,     apiManagement.GatewayUrl        :> obj
         "ApiManagement",           apiManagement.Name              :> obj
         "StaticWebsiteApi",        swApi.Name                      :> obj

@@ -25,16 +25,16 @@
             </when>
 
         </choose>
-        
+
         <set-query-parameter name="sv">
             <value>{1}</value>
         </set-query-parameter>
 
-        <set-query-parameter name="sr">
+        <set-query-parameter name="ss">
             <value>{2}</value>
         </set-query-parameter>
 
-        <set-query-parameter name="st">
+        <set-query-parameter name="srt">
             <value>{3}</value>
         </set-query-parameter>
 
@@ -46,12 +46,8 @@
             <value>{5}</value>
         </set-query-parameter>
 
-        <set-query-parameter name="spr">
-            <value>{6}</value>
-        </set-query-parameter>
-
         <set-query-parameter name="sig">
-            <value>{7}</value>
+            <value>{6}</value>
         </set-query-parameter>
 
         <rate-limit calls="100"
