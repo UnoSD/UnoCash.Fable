@@ -57,6 +57,7 @@ let infra() =
     let apiManagementEndpoint =
         "ApiManagementEndpoint"
     
+    // It seems to work also withut CORS policy, check it and fix it or remove this crap if not needed
     let origins, isFirstRun =
         output {
             let! outputs =
@@ -215,13 +216,20 @@ let infra() =
         application {
             name                    $"{appPrefix}spaaadapp"
             displayName             $"{appPrefix}spaaadapp"
-            oauth2AllowImplicitFlow true
+            
             groupMembershipClaims   "None"
             
-            replyUrls [
-                io    apiManagement.GatewayUrl
-                input "http://localhost:8080"
-            ]            
+            applicationWeb {
+                applicationWebImplicitGrant {
+                    accessTokenIssuanceEnabled true
+                    idTokenIssuanceEnabled     true
+                }
+                
+                redirectUris [
+                    io    (Output.Format($"{apiManagement.GatewayUrl}/"))
+                    input "http://localhost:8080/"
+                ]
+            }
             
             applicationOptionalClaims {
                 idTokens [
