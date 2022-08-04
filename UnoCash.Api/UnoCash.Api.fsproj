@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-        <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+        <TargetFramework>net6.0</TargetFramework>
+        <AzureFunctionsVersion>v4</AzureFunctionsVersion>
         <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
-        <FSharpCoreImplicitPackageVersion>5.0.*</FSharpCoreImplicitPackageVersion>
+        <FSharpCoreImplicitPackageVersion>6.0.*</FSharpCoreImplicitPackageVersion>
         <NoWarn>NU1608</NoWarn>
     </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="FSharp.Control.FusionTasks" Version="2.4.0" />
+    <ItemGroup>        
+        <PackageReference Include="FSharp.Control.FusionTasks" Version="2.5.0" />
         <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
-        <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.13" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.12.1" />
-        <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.5" />
+        <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.1.1" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.22.0" />
+        <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 
         <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.fsproj" />
 
@@ -33,5 +33,7 @@
         <Compile Include="GetReceiptData.fs" />
 
         <None Include="Main.fs" />
+
+        <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 </Project>
