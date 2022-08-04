@@ -1,6 +1,7 @@
 ﻿module Program
 
 open Pulumi.FSharp.AzureNative.ApiManagement.Inputs
+open Pulumi.FSharp.AzureNative.OperationalInsights
 open Pulumi.FSharp.AzureNative.Storage.Inputs
 open Pulumi.FSharp.AzureNative.ApiManagement
 open Pulumi.FSharp.AzureNative.Authorization
@@ -179,6 +180,12 @@ Deployment.runAsyncWithOptions (fun () ->
             BlobType.Block
         }
 
+    let _ =
+        workspace {
+            name          $"log{resourceSuffix}"
+            resourceGroup group.Name
+        }
+    
     let appInsights =
         ``component`` {
             name            $"appi{resourceSuffix}"
@@ -211,6 +218,7 @@ Deployment.runAsyncWithOptions (fun () ->
         loggerType    LoggerType.ApplicationInsights
         serviceName   apiManagement.Name
         resourceGroup group.Name
+        resourceId    appInsights.Id
         
         credentials   [
             "instrumentationKey", appInsights.InstrumentationKey
