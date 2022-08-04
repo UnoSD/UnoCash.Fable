@@ -16,12 +16,6 @@
     <None Include="APIApimApiPolicy.xml" />
     <None Include="Pulumi.yaml" />
     <None Include="Pulumi.msft.yaml" />
-    <None Include="Pulumi.test.yaml" />
-    
-    <Compile Include="Async.fs" />
-    <Compile Include="LetsEncrypt.fs" />
-    <Compile Include="Output.fs" />
-    <Compile Include="Certificate.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

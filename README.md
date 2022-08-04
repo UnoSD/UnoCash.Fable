@@ -37,3 +37,16 @@ It will use soon-ish:
 * Azure AD B2C for identity
 * Not that soon: Azure Front Door for WAF, CDN and global load balancing
 * Not that soon: AKS to host analytics services
+
+# Setting up Pulumi config
+
+```yaml
+config:
+  UnoCash.Pulumi:ApiBuild: {pathToSolution}/UnoCash.Fable/UnoCash.Api/bin/Release/netcoreapp3.1/publish
+  UnoCash.Pulumi:FableBuild: {pathToSolution}/UnoCash.Fable/UnoCash.Fable/output
+  UnoCash.Pulumi:FormRecognizerEndpoint: https://{formRecognizerName}.cognitiveservices.azure.com/
+  UnoCash.Pulumi:FormRecognizerKey: {formRecognizerKey}
+  UnoCash.Pulumi:workloadShortName: ucsh
+  azure:location: West Europe
+  azure-native:location: West Europe
+```
