@@ -212,14 +212,12 @@ let infra () =
             return String.Format(File.ReadAllText("StaticWebsiteApimApiPolicy.xml"), url)
         }
         
-    apiPolicy {
-        name          $"apimap-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        policyId      $"apimap-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        serviceName   apiManagement.Name
-        apiId         swApi.Name
-        resourceGroup group.Name
-        value         swApiPolicyXml
-        format        PolicyContentFormat.Xml
+    Pulumi.FSharp.Azure.ApiManagement.apiPolicy {
+        name              $"apimap-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        apiManagementName apiManagement.Name
+        apiName           swApi.Name
+        resourceGroup     group.Name
+        xmlContent        swApiPolicyXml
     }
 
     let spaAdApplication =
@@ -288,14 +286,13 @@ let infra () =
             displayName   "GET index"
         }
     
-    apiOperationPolicy {
-        name          $"apiop-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        policyId      $"apiop-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        operationId   getIndexOperation.Name
-        serviceName   apiManagement.Name
-        apiId         swApi.Name
-        resourceGroup group.Name
-        value         (policyFromFile "StaticWebsiteApimGetIndexOperationPolicy.xml")
+    Pulumi.FSharp.Azure.ApiManagement.apiOperationPolicy {
+        name              $"apiop-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        operationId       getIndexOperation.Name
+        apiManagementName apiManagement.Name
+        apiName           swApi.Name
+        resourceGroup     group.Name
+        xmlContent        (policyFromFile "StaticWebsiteApimGetIndexOperationPolicy.xml")
     }
         
     let getOperation =
@@ -310,14 +307,13 @@ let infra () =
             displayName   "GET"
         }
     
-    apiOperationPolicy {
-        name          $"apiop-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        policyId      $"apiop-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        operationId   getOperation.Name
-        serviceName   apiManagement.Name
-        apiId         swApi.Name
-        resourceGroup group.Name
-        value         (policyFromFile "StaticWebsiteApimGetOperationPolicy.xml")
+    Pulumi.FSharp.Azure.ApiManagement.apiOperationPolicy {
+        name              $"apiop-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        operationId       getOperation.Name
+        apiManagementName apiManagement.Name
+        apiName           swApi.Name
+        resourceGroup     group.Name
+        xmlContent        (policyFromFile "StaticWebsiteApimGetOperationPolicy.xml")
     }
     
     let postOperation =
@@ -332,14 +328,13 @@ let infra () =
             displayName   "POST AAD token"
         }
     
-    apiOperationPolicy {
-        name          $"apiop-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        policyId      $"apiop-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        operationId   postOperation.Name
-        serviceName   apiManagement.Name
-        apiId         swApi.Name
-        resourceGroup group.Name
-        value         (policyFromFile "StaticWebsiteApimPostOperationPolicy.xml")
+    Pulumi.FSharp.Azure.ApiManagement.apiOperationPolicy {
+        name              $"apiop-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        operationId       postOperation.Name
+        apiManagementName apiManagement.Name
+        apiName           swApi.Name
+        resourceGroup     group.Name
+        xmlContent        (policyFromFile "StaticWebsiteApimPostOperationPolicy.xml")
     }
     
     let accountKey =
@@ -532,14 +527,12 @@ let infra () =
                                  faAdAppIdentifier)
         }
 
-    apiPolicy {
-        name          $"apimap-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        policyId      $"apimap-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-        apiId         apiFunction.Name
-        serviceName   apiManagement.Name
-        resourceGroup group.Name
-        value         apiPolicyFromFile
-        format        PolicyContentFormat.Rawxml
+    Pulumi.FSharp.Azure.ApiManagement.apiPolicy {
+        name              $"apimap-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        apiName           apiFunction.Name
+        apiManagementName apiManagement.Name
+        resourceGroup     group.Name
+        xmlContent        apiPolicyFromFile
     }
     
     let apiOperation (httpMethod : string) =
@@ -583,7 +576,7 @@ let infra () =
         config["FableBuild"] + "/"
         
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
-    Seq.mapi(fun index file -> (blob {
+    Seq.iteri(fun index file -> (blob {
         name          $"sab-{index}-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
         source        { Path = file }.ToPulumiType
         contentType   (getContentType file[fablePublishDir.Length..])
@@ -594,7 +587,7 @@ let infra () =
         
         BlobType.Block
         BlobAccessTier.Hot
-    })) |> ignore
+    } |> ignore))
 
     //let speech =
     //    Pulumi.FSharp.Azure.Cognitive.account {
