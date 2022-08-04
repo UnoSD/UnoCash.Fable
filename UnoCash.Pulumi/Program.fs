@@ -29,8 +29,7 @@ open System.IO
 open System
 open Pulumi
 
-[<Literal>]
-let workloadShortName = "ucsh"
+
 let apiManagementEndpointOutputName = "ApiManagementEndpoint"
 
 // Usually that's the AppId, but that would mean setting a value in the app after creation so means two runs,
@@ -42,13 +41,48 @@ let faAdAppIdentifier = "apiapp"
 
 // Add support for parent resource (component) to group all blobs together
 
-let infra () =
+type bclList<'a> =
+    System.Collections.Generic.List<'a>
+
+let stackOptions =
+    let ignoreBlobSourceChanges (args : ResourceTransformationArgs) =
+        if args.Resource.GetResourceType() = "azure:storage/blob:Blob" then
+            args.Options.IgnoreChanges <- bclList(["source"])
+        ResourceTransformationResult(args.Args, args.Options) |> Nullable
+    
+    StackOptions(
+        ResourceTransformations =
+            bclList([
+                if Environment.GetEnvironmentVariable("AGENT_ID") = null then
+                    yield ResourceTransformation(ignoreBlobSourceChanges)
+            ]))
+
+let rec waitForDebugger () =
+    match Debugger.IsAttached with
+    | false -> Thread.Sleep(100)
+               printf "."
+               waitForDebugger ()
+    | true  -> printfn " attached"
+
+match Environment.GetEnvironmentVariable("PULUMI_DEBUG_WAIT") |>
+      Option.ofObj |>
+      Option.map (fun x -> x.ToLower()) with
+| Some "true"
+| Some "1"    -> Log.Warn $"Awaiting debugger to attach to the process: {Process.GetCurrentProcess().Id}"
+                 waitForDebugger ()
+| _           -> ()
+
+Deployment.runAsyncWithOptions (fun () ->
+    let workloadShortName = config["workloadShortName"]
+    let resourceSuffix = $"-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+    let resourceSuffixNoDashes = $"{workloadShortName}{Deployment.Instance.StackName}{Region.shortName}001"
+    
     //let stackOutputs =
     //    StackReference(Deployment.Instance.StackName).Outputs
         
     let group =
         resourceGroup {
-            name $"rg-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name $"rg{resourceSuffix}"
         }
     
     // It seems to work also without CORS policy, check it and fix it or remove this crap if not needed
@@ -64,7 +98,7 @@ let infra () =
     
     let storage =
         storageAccount {
-            name                   $"sa{workloadShortName}{Deployment.Instance.StackName}{Region.shortName}001"
+            name                   $"sa{resourceSuffixNoDashes}"
             resourceGroup          group.Name
             kind                   Kind.StorageV2
             
@@ -74,7 +108,7 @@ let infra () =
         }
         
     blobServiceProperties {
-        name             $"bsp-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name             $"bsp{resourceSuffix}"
         blobServicesName "default"
         accountName      storage.Name
         resourceGroup    group.Name
@@ -94,14 +128,14 @@ let infra () =
     }
     
     blobContainer {
-        name          $"sac-receipts-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"sac-receipts{resourceSuffix}"
         accountName   storage.Name
         containerName "receipts"
         resourceGroup group.Name
     }
     
     table {
-        name          $"sat-expenses-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"sat-expenses{resourceSuffix}"
         tableName     "Expense"
         accountName   storage.Name
         resourceGroup group.Name
@@ -109,7 +143,7 @@ let infra () =
         
     let webContainer =
         blobContainer {
-            name          $"sac-web-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"sac-web{resourceSuffix}"
             accountName   storage.Name
             containerName "$web"
             resourceGroup group.Name
@@ -117,14 +151,14 @@ let infra () =
             
     let buildContainer =
         blobContainer {
-            name          $"sac-build-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"sac-build{resourceSuffix}"
             accountName   storage.Name
             resourceGroup group.Name
         }
     
     let functionPlan =
         appServicePlan {
-            name          $"asp-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"asp{resourceSuffix}"
             resourceGroup group.Name
             kind          "FunctionApp"
             
@@ -136,7 +170,7 @@ let infra () =
 
     let apiBlob =
         blob {
-            name          $"sab-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"sab-api{resourceSuffix}"
             accountName   storage.Name
             containerName buildContainer.Name
             resourceGroup group.Name
@@ -147,7 +181,7 @@ let infra () =
 
     let appInsights =
         ``component`` {
-            name            $"appi-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name            $"appi{resourceSuffix}"
             resourceGroup   group.Name
             applicationType ApplicationType.Web
             kind            "web"
@@ -156,7 +190,7 @@ let infra () =
         
     let apiManagement =
         apiManagementService {
-            name           $"apim-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name           $"apim{resourceSuffix}"
             resourceGroup  group.Name
             publisherEmail "info@uno.cash"
             publisherName  "UnoSD"
@@ -172,7 +206,7 @@ let infra () =
         }
 
     logger {
-        name          $"apimlogger-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"apimlogger{resourceSuffix}"
         loggerId      "insight"
         loggerType    LoggerType.ApplicationInsights
         serviceName   apiManagement.Name
@@ -193,7 +227,7 @@ let infra () =
 
     let swApi =
         api {
-            name                 $"apima-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name                 $"apima-sw{resourceSuffix}"
             apiId                "staticwebsite"
             resourceGroup        group.Name
             serviceName          apiManagement.Name
@@ -213,7 +247,7 @@ let infra () =
         }
         
     Pulumi.FSharp.Azure.ApiManagement.apiPolicy {
-        name              $"apimap-sw-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name              $"apimap-sw{resourceSuffix}"
         apiManagementName apiManagement.Name
         apiName           swApi.Name
         resourceGroup     group.Name
@@ -222,8 +256,8 @@ let infra () =
 
     let spaAdApplication =
         application {
-            name                    $"app-spa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-            displayName             $"app-spa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name                    $"app-spa{resourceSuffix}"
+            displayName             $"app-spa{resourceSuffix}"
             
             groupMembershipClaims   "None"
             
@@ -276,7 +310,7 @@ let infra () =
 
     let getIndexOperation =
         apiOperation {
-            name          $"apio-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"apio-sw-get-index{resourceSuffix}"
             resourceGroup group.Name
             serviceName   apiManagement.Name
             apiId         swApi.Name
@@ -287,7 +321,7 @@ let infra () =
         }
     
     Pulumi.FSharp.Azure.ApiManagement.apiOperationPolicy {
-        name              $"apiop-sw-get-index-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name              $"apiop-sw-get-index{resourceSuffix}"
         operationId       getIndexOperation.Name
         apiManagementName apiManagement.Name
         apiName           swApi.Name
@@ -297,7 +331,7 @@ let infra () =
         
     let getOperation =
         apiOperation {
-            name          $"apio-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"apio-sw-get{resourceSuffix}"
             resourceGroup group.Name
             serviceName   apiManagement.Name
             apiId         swApi.Name
@@ -308,7 +342,7 @@ let infra () =
         }
     
     Pulumi.FSharp.Azure.ApiManagement.apiOperationPolicy {
-        name              $"apiop-sw-get-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name              $"apiop-sw-get{resourceSuffix}"
         operationId       getOperation.Name
         apiManagementName apiManagement.Name
         apiName           swApi.Name
@@ -318,7 +352,7 @@ let infra () =
     
     let postOperation =
         apiOperation {
-            name          $"apio-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"apio-sw-post-token{resourceSuffix}"
             resourceGroup group.Name
             serviceName   apiManagement.Name
             apiId         swApi.Name
@@ -329,7 +363,7 @@ let infra () =
         }
     
     Pulumi.FSharp.Azure.ApiManagement.apiOperationPolicy {
-        name              $"apiop-sw-post-token-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name              $"apiop-sw-post-token{resourceSuffix}"
         operationId       postOperation.Name
         apiManagementName apiManagement.Name
         apiName           swApi.Name
@@ -346,7 +380,7 @@ let infra () =
     
     let app =
         webApp {
-            name          $"func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"func{resourceSuffix}"
             kind          "functionapp,linux"
             resourceGroup group.Name
             serverFarmId  functionPlan.Id
@@ -368,12 +402,12 @@ let infra () =
             GetClientConfig.InvokeAsync()
             
         let! uuid =
-            (randomUuid { name $"raid-apim-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+            (randomUuid { name $"raid-apim-to-sa{resourceSuffix}" }).Id
         
         let ``Storage Blob Data Reader`` = "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
         
         roleAssignment {
-            name               $"ra-apim-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name               $"ra-apim-to-sa{resourceSuffix}"
             roleAssignmentName uuid
             scope              storage.Id
             roleDefinitionId   $"/subscriptions/{result.SubscriptionId}/providers/Microsoft.Authorization/roleDefinitions/{``Storage Blob Data Reader``}"
@@ -392,8 +426,8 @@ let infra () =
     // right user (user cannot tamper the token and change user because it's validated at APIM level first)
     let faAdApplication =
         application {
-            name                    $"app-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-            displayName             $"app-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name                    $"app-api{resourceSuffix}"
+            displayName             $"app-api{resourceSuffix}"
             
             //replyUrls [
             //    input "https://<func hostname>/.auth/login/aad/callback"
@@ -419,19 +453,19 @@ let infra () =
         }
         
     servicePrincipal {
-        name          $"app-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"app-api{resourceSuffix}"
         applicationId faAdApplication.ApplicationId    
     }
     
     let faAdApplicationSecret =
         applicationPassword {
-            name                $"apps-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
-            displayName         $"apps-api-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name                $"apps-api{resourceSuffix}"
+            displayName         $"apps-api{resourceSuffix}"
             applicationObjectId faAdApplication.ObjectId
         }
     
     webAppApplicationSettings {
-        name          $"func-sett-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"func-sett{resourceSuffix}"
         resourceName  app.Name
         resourceGroup group.Name
         
@@ -453,12 +487,12 @@ let infra () =
             GetClientConfig.InvokeAsync()
             
         let! uuid =
-            (randomUuid { name $"raid-func-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001" }).Id
+            (randomUuid { name $"raid-func-to-sa{resourceSuffix}" }).Id
         
         let ``Storage Blob Data Owner`` = "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
         
         roleAssignment {
-            name               $"ra-func-to-sa-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name               $"ra-func-to-sa{resourceSuffix}"
             roleAssignmentName uuid
             scope              storage.Id
             roleDefinitionId   $"/subscriptions/{result.SubscriptionId}/providers/Microsoft.Authorization/roleDefinitions/{``Storage Blob Data Owner``}"
@@ -471,7 +505,7 @@ let infra () =
     
     let apiFunction =
         api {
-            name                 $"apima-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name                 $"apima-func{resourceSuffix}"
             apiId                "api"
             path                 "api"
             resourceGroup        group.Name
@@ -485,7 +519,7 @@ let infra () =
         }
 
     webAppAuthSettingsV2 {
-        name          $"func-auth-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"func-auth{resourceSuffix}"
         resourceName  app.Name
         resourceGroup group.Name
         
@@ -528,7 +562,7 @@ let infra () =
         }
 
     Pulumi.FSharp.Azure.ApiManagement.apiPolicy {
-        name              $"apimap-func-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name              $"apimap-func{resourceSuffix}"
         apiName           apiFunction.Name
         apiManagementName apiManagement.Name
         resourceGroup     group.Name
@@ -537,7 +571,7 @@ let infra () =
     
     let apiOperation (httpMethod : string) =
         apiOperation {
-            name          $"apio-func-{httpMethod.ToLower()}-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"apio-func-{httpMethod.ToLower()}{resourceSuffix}"
             resourceGroup group.Name
             serviceName   apiManagement.Name
             apiId         apiFunction.Name
@@ -554,7 +588,7 @@ let infra () =
         let! url = apiManagement.GatewayUrl
         
         blob {
-            name          $"sab-webconfig-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+            name          $"sab-webconfig{resourceSuffix}"
             blobName      "apibaseurl"
             accountName   storage.Name
             containerName webContainer.Name
@@ -577,7 +611,7 @@ let infra () =
         
     Directory.EnumerateFiles(fablePublishDir, "*", SearchOption.AllDirectories) |>
     Seq.iteri(fun index file -> (blob {
-        name          $"sab-{index}-{workloadShortName}-{Deployment.Instance.StackName}-{Region.shortName}-001"
+        name          $"sab-{index}{resourceSuffix}"
         source        { Path = file }.ToPulumiType
         contentType   (getContentType file[fablePublishDir.Length..])
         blobName      file[fablePublishDir.Length..]
@@ -602,39 +636,5 @@ let infra () =
         //apiManagementEndpoint,     apiManagement.GatewayUrl        :> obj
         //"LetsEncryptAccountKey",   certificate.AccountKey          :> obj
         //"Certificate",             certificate.Pem                 :> obj
-    ]
-
-type bclList<'a> =
-    System.Collections.Generic.List<'a>
-
-let ignoreBlobSourceChanges (args : ResourceTransformationArgs) =
-    if args.Resource.GetResourceType() = "azure:storage/blob:Blob" then
-        args.Options.IgnoreChanges <- bclList(["source"])
-    ResourceTransformationResult(args.Args, args.Options) |> Nullable
-
-let stackOptions =
-    StackOptions(
-        ResourceTransformations =
-            bclList([
-                if Environment.GetEnvironmentVariable("AGENT_ID") = null then
-                    yield ResourceTransformation(ignoreBlobSourceChanges)
-            ]))
-
-[<EntryPoint>]
-let main _ =
-    let rec waitForDebugger () =
-        match Debugger.IsAttached with
-        | false -> Thread.Sleep(100)
-                   printf "."
-                   waitForDebugger ()
-        | true  -> printfn " attached"
-
-    match Environment.GetEnvironmentVariable("PULUMI_DEBUG_WAIT") |>
-          Option.ofObj |>
-          Option.map (fun x -> x.ToLower()) with
-    | Some "true"
-    | Some "1"    -> Log.Warn $"Awaiting debugger to attach to the process: {Process.GetCurrentProcess().Id}"
-                     waitForDebugger ()
-    | _           -> ()
-
-    Deployment.runAsyncWithOptions (infra >> async.Return) stackOptions
+    ] |> async.Return
+) stackOptions
