@@ -22,6 +22,7 @@
       <Compile Include="Configuration.fs" />
       <Compile Include="Storage.fs" />
       <Compile Include="Table.fs" />
+      <Compile Include="CurrencyWriter.fs" />
       <Compile Include="AccountWriter.fs" />
       <Compile Include="ExpenseTable.fs" />
       <Compile Include="ExpenseWriter.fs" />

@@ -42,3 +42,6 @@ let fromTable upn getPartition getId =
 
     getTable<'a, EntityQuery<'a>, seq<'a * EntityMetadata>> fromTableAsync >>
     Async.map (Seq.map fst)
+
+let noPartitionKey _ =
+    String.Empty

@@ -26,6 +26,7 @@
         <Compile Include="Function.fs" />
         <Compile Include="ExpenseRequest.fs" />
         <Compile Include="AddDto.fs" />
+        <Compile Include="AddCurrency.fs" />
         <Compile Include="AddAccount.fs" />
         <Compile Include="AddExpense.fs" />
         <Compile Include="GetExpenses.fs" />

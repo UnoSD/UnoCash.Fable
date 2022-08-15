@@ -1,6 +1,7 @@
 ﻿module UnoCash.Core.AccountWriter
 
 open UnoCash.Dto
+open UnoCash.Core.Table
 
 let writeAsync upn account =
-    Table.writeAsync upn account (fun (_ : Account) -> "") (fun a -> a.Id.ToString())
+    Table.writeAsync upn account noPartitionKey (fun a -> a.Id.ToString())

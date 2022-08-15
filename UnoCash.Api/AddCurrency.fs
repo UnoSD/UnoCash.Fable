@@ -1,11 +1,10 @@
-module UnoCash.Api.AddAccount
+module UnoCash.Api.AddCurrency
 
 open UnoCash.Core
 open Microsoft.Azure.WebJobs
 open Microsoft.AspNetCore.Http
 open Microsoft.Azure.WebJobs.Extensions.Http
 
-[<FunctionName("AddAccount")>]
+[<FunctionName("AddCurrency")>]
 let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "post")>]req: HttpRequest) =
-    // Put Currency Guid on DTO and validate account
-    AddDto.add req AccountWriter.writeAsync
+    AddDto.add req CurrencyWriter.writeAsync

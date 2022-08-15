@@ -7,6 +7,7 @@
     <ItemGroup>
         <Compile Include="Expense.fs" />
         <Compile Include="Receipt.fs" />
+        <Compile Include="Currency.fs" />
         <Compile Include="Account.fs" />
     </ItemGroup>
 
