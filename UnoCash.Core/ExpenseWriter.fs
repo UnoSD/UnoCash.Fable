@@ -1,14 +1,13 @@
-﻿module UnoCash.Core.ExpenseWriter
+module UnoCash.Core.ExpenseWriter
 
-open System
-open UnoCash.Dto
-open FSharp.Azure.Storage.Table
 open UnoCash.Core.Table
+open UnoCash.Dto
+open System
+open FSharp.Azure.Storage.Table
 open UnoCash.Core.ExpenseTable
 
 let writeAsync upn (expense : Expense) =
-    Insert expense |>
-    inExpensesTable upn
+    writeAsync upn expense getPartitionKey getRowKey
     
 let deleteAsync upn account (id : Guid) =
     {

@@ -6,10 +6,10 @@ open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
 
 let private disallowedKeyFieldsChars =
-    lazy([|
-        '/'; '\\'; '#'; '?'
-        yield! [ 0x0 .. 0x1F ] @ [ 0x7F .. 0x9F ] |> List.map Convert.ToChar
-    |])
+    lazy [|
+       '/'; '\\'; '#'; '?'
+       yield! [ 0x0 .. 0x1F ] @ [ 0x7F .. 0x9F ] |> List.map Convert.ToChar
+   |]
 
 let private formatTableKey text =
     String.split disallowedKeyFieldsChars.Value text |>
@@ -20,7 +20,7 @@ let partitionKey upn account =
     formatTableKey
 
 let private getTable<'a, 'b, 'c> (operation : CloudTableClient -> string -> 'b -> Async<'c>) =
-    operation tableClient.Value (typeof<'a>.Name)
+    operation tableClient.Value typeof<'a>.Name
 
 let private getTableEntityId upn getPartition getId (entity : 'a) =
     { 
@@ -32,6 +32,10 @@ let inEntityTable upn (getPartition : 'a -> string) getId =
     EntityIdentiferReader.GetIdentifier <- (getTableEntityId upn getPartition getId)
 
     getTable<'a, Operation<'b>, OperationResult> inTableAsync
+    
+let writeAsync upn entity getPartitionKey getId =
+    Insert entity |>
+    inEntityTable upn getPartitionKey getId
     
 let fromTable upn getPartition getId =
     EntityIdentiferReader.GetIdentifier <- (getTableEntityId upn getPartition getId)

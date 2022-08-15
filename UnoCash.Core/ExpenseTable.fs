@@ -3,10 +3,10 @@ module UnoCash.Core.ExpenseTable
 open UnoCash.Core.Table
 open UnoCash.Dto
 
-let private getPartitionKey expense =
+let getPartitionKey expense =
     expense.Account
 
-let private getRowKey expense =
+let getRowKey expense =
     expense.Id.ToString()
 
 let inExpensesTable upn =
