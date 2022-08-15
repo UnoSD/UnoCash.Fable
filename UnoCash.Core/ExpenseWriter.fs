@@ -4,6 +4,7 @@ open System
 open UnoCash.Dto
 open FSharp.Azure.Storage.Table
 open UnoCash.Core.Table
+open UnoCash.Core.ExpenseTable
 
 let writeAsync upn (expense : Expense) =
     Insert expense |>

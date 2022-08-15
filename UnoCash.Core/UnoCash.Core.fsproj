@@ -23,6 +23,7 @@
       <Compile Include="Storage.fs" />
       <Compile Include="Table.fs" />
       <Compile Include="AccountWriter.fs" />
+      <Compile Include="ExpenseTable.fs" />
       <Compile Include="ExpenseWriter.fs" />
       <Compile Include="ExpenseReader.fs" />
       <Compile Include="UnoCashFormField.fs" />

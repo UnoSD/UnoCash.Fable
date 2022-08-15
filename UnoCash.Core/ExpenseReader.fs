@@ -4,6 +4,7 @@ open UnoCash.Dto
 open Microsoft.Azure.Documents
 open FSharp.Azure.Storage.Table
 open UnoCash.Core.Table
+open UnoCash.Core.ExpenseTable
 
 let private getAll' upn account filter =
     Query.all<Expense> |>

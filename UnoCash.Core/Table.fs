@@ -1,7 +1,6 @@
 module UnoCash.Core.Table
 
 open System
-open UnoCash.Dto
 open UnoCash.Core.Storage
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
@@ -23,19 +22,19 @@ let partitionKey upn account =
 let private getTable<'a, 'b, 'c> (operation : CloudTableClient -> string -> 'b -> Async<'c>) =
     operation tableClient.Value (typeof<'a>.Name)
 
-let private getTableEntityId upn (expense : Expense) =
+let private getTableEntityId upn getPartition getId (entity : 'a) =
     { 
-        PartitionKey = partitionKey upn expense.Account
-        RowKey       = expense.Id.ToString()
+        PartitionKey = partitionKey upn (getPartition entity)
+        RowKey       = getId entity
     }
 
-let inExpensesTable<'a> upn =
-    EntityIdentiferReader<Expense>.GetIdentifier <- (getTableEntityId upn)
+let inEntityTable upn (getPartition : 'a -> string) getId =
+    EntityIdentiferReader.GetIdentifier <- (getTableEntityId upn getPartition getId)
 
-    getTable<Expense, Operation<'a>, OperationResult> inTableAsync
+    getTable<'a, Operation<'b>, OperationResult> inTableAsync
     
-let fromExpensesTable upn =
-    EntityIdentiferReader.GetIdentifier <- (getTableEntityId upn)
+let fromTable upn getPartition getId =
+    EntityIdentiferReader.GetIdentifier <- (getTableEntityId upn getPartition getId)
 
-    getTable<Expense, EntityQuery<Expense>, seq<Expense * EntityMetadata>> fromTableAsync >>
+    getTable<'a, EntityQuery<'a>, seq<'a * EntityMetadata>> fromTableAsync >>
     Async.map (Seq.map fst)
