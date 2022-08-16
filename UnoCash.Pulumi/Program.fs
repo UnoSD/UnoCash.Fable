@@ -141,6 +141,13 @@ Deployment.runAsyncWithOptions (fun () ->
         accountName   storage.Name
         resourceGroup group.Name
     }
+    
+    table {
+        name          $"sat-accounts{resourceSuffix}"
+        tableName     "Account"
+        accountName   storage.Name
+        resourceGroup group.Name
+    }
         
     let webContainer =
         blobContainer {

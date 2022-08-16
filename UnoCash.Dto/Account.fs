@@ -6,6 +6,6 @@ type Account =
     {
         CurrencyId     : Guid
         Name           : string
-        InitialBalance : decimal
+        InitialBalance : float
         Id             : Guid
     }
