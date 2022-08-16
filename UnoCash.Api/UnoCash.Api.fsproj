@@ -16,7 +16,9 @@
         <ProjectReference Include="..\UnoCash.Core\UnoCash.Core.fsproj" />
 
         <None Include="host.json" CopyToOutputDirectory="PreserveNewest" />
-        <None Include="local.settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+        <None Include="local.settings.json" CopyToPublishDirectory="Never">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
 
         <Compile Include="Core.fs" />
         <Compile Include="Result.fs" />
