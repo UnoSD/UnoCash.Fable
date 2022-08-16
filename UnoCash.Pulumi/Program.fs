@@ -135,19 +135,15 @@ Deployment.runAsyncWithOptions (fun () ->
         resourceGroup group.Name
     }
     
-    table {
-        name          $"sat-expenses{resourceSuffix}"
-        tableName     "Expense"
-        accountName   storage.Name
-        resourceGroup group.Name
-    }
-    
-    table {
-        name          $"sat-accounts{resourceSuffix}"
-        tableName     "Account"
-        accountName   storage.Name
-        resourceGroup group.Name
-    }
+    [ "Expense"; "Account"; "Currency" ]
+    |> List.iter (fun tname ->
+            table {
+                name          $"sat-{tname.ToLower()}{resourceSuffix}"
+                tableName     tname
+                accountName   storage.Name
+                resourceGroup group.Name
+            } |> ignore
+        )
         
     let webContainer =
         blobContainer {
