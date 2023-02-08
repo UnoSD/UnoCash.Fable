@@ -22,7 +22,7 @@ let private toUnoCashExpense (accounts : Map<int, string>) (payees : Map<int, st
         Date        = DateTime(1, 1, 1, 0, 0, 0).AddDays(ope.Date)
         Account     = Map.tryFind ope.Account accounts |> Option.defaultValue ""
         Type        = "Regular"
-        Status      = match ope.St with | 2 -> "Reconciled" | _ -> "New"
+        Status      = match ope.St with | Some 2 -> "Reconciled" | _ -> "New"
         Tags        = ope.Tags |> Option.defaultValue ""
         Id          = Guid.Empty
     }

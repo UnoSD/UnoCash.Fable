@@ -12,6 +12,6 @@
 <fav key="1" amount="800.99000000000001" account="1" flags="518" payee="14" category="1" nextdate="738429" every="1" unit="2" limit="1"/>
 <fav key="2" amount="406.99000000000001" account="2" flags="518" payee="14" category="1" nextdate="738429" every="1" unit="2" limit="1"/>
 <ope date="738336" amount="-4412.8599999999997" account="14" st="2" payee="62" category="46" wording="Description"/>
-<ope date="738214" amount="-50" account="1" dst_account="3" st="2" flags="8" kxfer="1"/>
+<ope date="738214" amount="-50" account="1" dst_account="3" flags="8" kxfer="1"/>
 <ope date="738333" amount="-1000" account="1" st="2" payee="3" category="5" tags="Tag"/>
 </homebank>
