@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GetAccounts" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/UnoCash.Test/GetAccounts.http" requestIdentifier="GetAccounts" runType="Run single request">
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<homebank v="1.3999999999999999" d="050506">
+<properties title="All currencies" curr="1" auto_smode="1" auto_weekday="1"/>
+<cur key="1" flags="2" iso="ISO" name="Currency name 1" symb="S" syprf="1" dchar="." gchar="" frac="4" rate="0" mdate="0"/>
+<cur key="2" flags="2" iso="ISO" name="Currency name 2" symb="$" syprf="1" dchar="." gchar="" frac="4" rate="0" mdate="0"/>
+<account key="1" pos="2" type="1" curr="1" name="Account name 1" initial="70.2" minimum="0" maximum="0" rdate="738412"/>
+<account key="2" pos="2" type="1" curr="1" name="Account name 2" initial="70.1" minimum="0" maximum="0" rdate="738412"/>
+<pay key="1" name="Payee name"/>
+<pay key="2" name="Payee name 2"/>
+<cat key="1" name="Category"/>
+<cat key="38" parent="1" flags="1" name="Child category"/>
+<fav key="1" amount="800.99000000000001" account="1" flags="518" payee="14" category="1" nextdate="738429" every="1" unit="2" limit="1"/>
+<fav key="2" amount="406.99000000000001" account="2" flags="518" payee="14" category="1" nextdate="738429" every="1" unit="2" limit="1"/>
+<ope date="738336" amount="-4412.8599999999997" account="14" st="2" payee="62" category="46" wording="Description"/>
+<ope date="738214" amount="-50" account="1" dst_account="3" st="2" flags="8" kxfer="1"/>
+<ope date="738333" amount="-1000" account="1" st="2" payee="3" category="5" tags="Tag"/>
+</homebank>

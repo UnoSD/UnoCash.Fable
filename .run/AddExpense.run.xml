@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="AddExpense" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/UnoCash.Test/AddExpense.http" runType="Run single request">
+  <configuration default="false" name="AddExpense" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/UnoCash.Test/AddExpense.http" requestIdentifier="AddExpense" runType="Run single request">
     <method v="2" />
   </configuration>
 </component>

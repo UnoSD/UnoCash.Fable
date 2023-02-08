@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="All" type="CompoundRunConfigurationType">
-    <toRun name="UnoCash.Fulma" type="RunNativeExe" />
     <toRun name="UnoCash.Api" type="AzureFunctionsHost" />
+    <toRun name="UnoCash.Fulma" type="RunNativeExe" />
     <method v="2" />
   </configuration>
 </component>
