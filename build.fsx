@@ -16,7 +16,7 @@ open Fake.Net
 // Install pulumi/az cli/yarn
 
 // Requires pulumi manual approval
-// dotnet fake run build.fsx -t Deploy
+// dotnet fake build -t Deploy
 
 module Pulumi =
     let private pulumi' redirectOutput args = 
