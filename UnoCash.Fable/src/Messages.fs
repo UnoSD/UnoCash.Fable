@@ -11,6 +11,7 @@ type Message =
     | TagsTextChanged of string
     | TagDelete of string
     | ChangeDate of string
+    | ShowAccountsLoaded of Account[]
     | ShowExpensesLoaded of Expense[]
     | FileSelected of string
     | FileUpload of (Blob * string * int)

@@ -9,6 +9,9 @@ open UnoCash.Fulma.Config
 type Expense =
     JsonProvider.Generator<"GetExpenses.json">
 
+type Account =
+    JsonProvider.Generator<"GetAccounts.json">
+
 type Tab =
     | AddExpense
     | SplitExpense

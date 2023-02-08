@@ -8,6 +8,7 @@
       <Link>webpack.config.js</Link>
     </Content>
     <Content Include="GetExpenses.json" />
+    <Content Include="GetAccounts.json" />
     <Compile Include="Config.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="Models.fs" />

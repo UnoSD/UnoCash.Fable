@@ -18,6 +18,24 @@ let private loadConfig () =
 let init _ =
     emptyModel, Cmd.OfPromise.perform loadConfig () SetApiBaseUrl
 
+let private loadAccounts apiBaseUrl =
+    promise {
+        let url =
+            apiBaseUrl |>
+            getAccountsUrl
+        
+        let! response =
+            fetch url [ Credentials RequestCredentials.Include ]
+        
+        let! text =
+            response.text()
+        
+        return text |> Account.ParseArray
+    }
+
+let private loadAccountsCmd apiBaseUrl =
+    Cmd.OfPromise.perform loadAccounts apiBaseUrl ShowAccountsLoaded
+
 let private loadExpenses (account, apiBaseUrl) =
     promise {
         let url =
@@ -97,7 +115,8 @@ let private toModel (expense : Expense) =
 let private changeTabTo tab model =
     match tab with
     | ShowExpenses
-    | ShowStatistics -> { model with CurrentTab = tab }, loadExpensesCmd model.ShowAccount model.ApiBaseUrl
+    | ShowStatistics -> { model with CurrentTab = tab }, Cmd.batch [ loadExpensesCmd model.ShowAccount model.ApiBaseUrl
+                                                                     loadAccountsCmd model.ApiBaseUrl ]
     | AddExpense     -> { model with ApiBaseUrl = model.ApiBaseUrl; CurrentTab = tab }, Cmd.none
     | _              -> { model with CurrentTab = tab }, Cmd.none
 
@@ -156,6 +175,8 @@ let update message model =
                              
     | ShowExpensesLoaded exs -> { model with Expenses = exs
                                              ExpensesLoaded = true }, Cmd.none
+    
+    | ShowAccountsLoaded acs -> { model with Accounts = acs |> Array.map (fun a -> a.name) |> List.ofArray }, Cmd.none
     
     | FileSelected fileName  -> { model with SelectedFile = match fileName with
                                                             | "" | null -> Option.None

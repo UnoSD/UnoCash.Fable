@@ -9,6 +9,8 @@ open Feliz.Recharts
 open System
 open Fable.React.Helpers
 
+// Rebuild financial dashboard here
+
 // Generalize expensesTable from ShowExpenses module
 
 type private PolarData =
