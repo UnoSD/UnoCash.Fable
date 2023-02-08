@@ -17,7 +17,7 @@ let runAsync (result : Result<Async<'a>,string list>) =
     Async.StartAsTask
     
 let runAsync' result =
-    async.Bind(result, (Result.map (async.Return)) >>
+    async.Bind(result, (Result.map async.Return) >>
                        runAsync >>
                        (fun x -> x.AsAsync())) |>
     Async.StartAsTask

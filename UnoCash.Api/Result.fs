@@ -2,14 +2,14 @@
 module Result
 
 type ResultBuilder() =
-    member __.Bind(v, f) = Result.bind f v
+    member _.Bind(v, f) = Result.bind f v
 
-    member __.Return v = Ok v
+    member _.Return v = Ok v
 
-    member __.MergeSources(x, y) =
-        __.MergeSources(x, y |> Result.mapError (fun y -> [ y ]))
+    member this.MergeSources(x, y) =
+        this.MergeSources(x, y |> Result.mapError (fun y -> [ y ]))
 
-    member __.MergeSources(x, y) =
+    member _.MergeSources(x, y) =
         match x, y with
         | Ok x, Ok y -> Ok(x, y)
         | Error x, Error y -> Error(x :: y)
