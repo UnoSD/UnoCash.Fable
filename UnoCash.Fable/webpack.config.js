@@ -1,3 +1,5 @@
+// NODE_OPTIONS='--openssl-legacy-provider' dotnet fake run build.fsx -t WatchFable
+
 const path = require("path");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -27,7 +29,7 @@ var commonPlugins = [
 ];
 
 module.exports = (env, options) => {
-
+    
     // If no mode has been defined, default to `development`
     if (options.mode === undefined)
         options.mode = "development";
@@ -72,7 +74,7 @@ module.exports = (env, options) => {
                 new webpack.NamedModulesPlugin()
             ]),
         devServer: {
-            before: function (app, server, compiler) {
+            before: function (app, _server, _compiler) {
                 app.get('/apibaseurl', function (req, res) {                    
                     res.send("http://localhost:7071");
                 })},
