@@ -1,5 +1,16 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="UnoCash.Fable" type="JavascriptDebugType" uri="http://localhost:8080">
-    <method v="2" />
+  <configuration default="false" name="UnoCash.Fable" type="RunNativeExe" factoryName="Native Executable">
+    <option name="EXE_PATH" value="$USER_HOME$/.dotnet/tools/fable" />
+    <option name="PROGRAM_PARAMETERS" value="watch . --run webpack-dev-server" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/UnoCash.Fable" />
+    <option name="PASS_PARENT_ENVS" value="1" />
+    <envs>
+      <env name="DOTNET_ROOT" value="$USER_HOME$/.dotnet" />
+      <env name="FAKE_DETAILED_ERRORS" value="true" />
+    </envs>
+    <option name="USE_EXTERNAL_CONSOLE" value="0" />
+    <method v="2">
+      <option name="Build" default="false" projectName="UnoCash.Fable" projectPath="file://$PROJECT_DIR$/UnoCash.Fable/UnoCash.Fable.fsproj" />
+    </method>
   </configuration>
 </component>

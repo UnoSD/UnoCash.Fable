@@ -19,3 +19,4 @@ nuget Fulma prerelease
 nuget Fulma.Elmish prerelease
 nuget Fulma.Extensions.Wikiki.Calendar prerelease
 nuget Thoth.Fetch
+nuget Feliz.Recharts

@@ -5,7 +5,7 @@ open UnoCash.Fulma.Helpers
 open UnoCash.Fulma.Models
 open UnoCash.Fulma.Messages
 open Feliz
-//open Feliz.Recharts
+open Feliz.Recharts
 open System
 open Fable.React.Helpers
 
@@ -87,25 +87,25 @@ let private renderActiveShape (data: IPolarProps) =
                 svg.dy 8
                 svg.children [ str data.payload.name ] ]
 
-          //Recharts.sector
-          //    [ prop.cx data.cx |> unbox<ISectorProperty>
-          //      prop.cy data.cy |> unbox<ISectorProperty>
-          //
-          //      pie.startAngle data.startAngle    |> unbox<ISectorProperty>
-          //      pie.endAngle data.endAngle        |> unbox<ISectorProperty>
-          //      pie.innerRadius data.innerRadius  |> unbox<ISectorProperty>
-          //      pie.outerRadius data.outerRadius  |> unbox<ISectorProperty>
-          //      Interop.mkAttr "fill" "#444"      |> unbox<ISectorProperty> ]    
+          Recharts.sector
+              [ prop.cx data.cx |> unbox<ISectorProperty>
+                prop.cy data.cy |> unbox<ISectorProperty>
+          
+                pie.startAngle data.startAngle    |> unbox<ISectorProperty>
+                pie.endAngle data.endAngle        |> unbox<ISectorProperty>
+                pie.innerRadius data.innerRadius  |> unbox<ISectorProperty>
+                pie.outerRadius data.outerRadius  |> unbox<ISectorProperty>
+                Interop.mkAttr "fill" "#444"      |> unbox<ISectorProperty> ]    
 
-          //Recharts.sector
-          //    [ prop.cx data.cx                          |> unbox<ISectorProperty> 
-          //      prop.cy data.cy                          |> unbox<ISectorProperty> 
-          //                                               |> unbox<ISectorProperty> 
-          //      pie.startAngle data.startAngle           |> unbox<ISectorProperty> 
-          //      pie.endAngle data.endAngle               |> unbox<ISectorProperty> 
-          //      pie.innerRadius (data.outerRadius + 6.)  |> unbox<ISectorProperty> 
-          //      pie.outerRadius (data.outerRadius + 10.) |> unbox<ISectorProperty> 
-          //      Interop.mkAttr "fill" "#222"             |> unbox<ISectorProperty> ]
+          Recharts.sector
+              [ prop.cx data.cx                          |> unbox<ISectorProperty> 
+                prop.cy data.cy                          |> unbox<ISectorProperty> 
+                                                         |> unbox<ISectorProperty> 
+                pie.startAngle data.startAngle           |> unbox<ISectorProperty> 
+                pie.endAngle data.endAngle               |> unbox<ISectorProperty> 
+                pie.innerRadius (data.outerRadius + 6.)  |> unbox<ISectorProperty> 
+                pie.outerRadius (data.outerRadius + 10.) |> unbox<ISectorProperty> 
+                Interop.mkAttr "fill" "#222"             |> unbox<ISectorProperty> ]
 
           Svg.path
               [ svg.d (sprintf "M%f,%fL%f,%fL%f,%f" sx sy mx my ex ey)
@@ -147,41 +147,40 @@ let private totalsPieChart state dispatch =
         Array.map (fun (tag, exs) -> { name = tag; value = (exs |> Array.sumBy (fun x -> int x.amount)) }) |>
         Array.sortBy (fun x -> x.value)
 
-    //Recharts.pieChart
-    //    [ pieChart.margin (10, 30, 0, 0)
-    //      pieChart.width (int Browser.Dom.window.innerWidth)
-    //      pieChart.height 300
-    //      pieChart.children
-    //          [ Recharts.pie
-    //              [ pie.data data
-    //                pie.dataKey "value"
-    //                pie.nameKey "name"
-    //                pie.label false
-    //                pie.innerRadius 60
-    //                pie.outerRadius 80
-    //                pie.activeIndex state.PieChartIndex
-    //                
-    //                Interop.mkPieAttr "activeShape" renderActiveShape
-    //                
-    //                pie.children [
-    //                    Recharts.cell [ cell.fill "#0088FE" ]
-    //                    Recharts.cell [ cell.fill "#00C49F" ]
-    //                    Recharts.cell [ cell.fill "#FFBB28" ]
-    //                    Recharts.cell [ cell.fill "#FF8042" ]
-    //                ]
-    //                
-    //                Interop.mkPieAttr "onMouseEnter" (onPieEnter data dispatch) ]
-    //
-    //            Recharts.pie
-    //                [ pie.data (polarDataInnerCircle counter)
-    //                  pie.dataKey "value"
-    //                  pie.nameKey "name"
-    //                  pie.label false
-    //                  pie.innerRadius 45
-    //                  pie.outerRadius 50
-    //                  pie.fill "#82ca9d"
-    //                  Interop.mkPieAttr "fill" (colors.[(abs counter) % colors.Length]) ] ] ]
-    Html.none
+    Recharts.pieChart
+        [ pieChart.margin (10, 30, 0, 0)
+          pieChart.width (int Browser.Dom.window.innerWidth)
+          pieChart.height 300
+          pieChart.children
+              [ Recharts.pie
+                  [ pie.data data
+                    pie.dataKey "value"
+                    pie.nameKey "name"
+                    pie.label false
+                    pie.innerRadius 60
+                    pie.outerRadius 80
+                    pie.activeIndex state.PieChartIndex
+                    
+                    Interop.mkPieAttr "activeShape" renderActiveShape
+                    
+                    pie.children [
+                        Recharts.cell [ cell.fill "#0088FE" ]
+                        Recharts.cell [ cell.fill "#00C49F" ]
+                        Recharts.cell [ cell.fill "#FFBB28" ]
+                        Recharts.cell [ cell.fill "#FF8042" ]
+                    ]
+                    
+                    Interop.mkPieAttr "onMouseEnter" (onPieEnter data dispatch) ]
+    
+                Recharts.pie
+                    [ pie.data (polarDataInnerCircle counter)
+                      pie.dataKey "value"
+                      pie.nameKey "name"
+                      pie.label false
+                      pie.innerRadius 45
+                      pie.outerRadius 50
+                      pie.fill "#82ca9d"
+                      Interop.mkPieAttr "fill" colors[(abs counter) % colors.Length] ] ] ]
 
 let statisticsCard model dispatch =
     card [ totalsPieChart model dispatch ]
