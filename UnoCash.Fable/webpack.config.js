@@ -108,7 +108,17 @@ module.exports = (env, options) => {
                     use: ['style-loader', 'css-loader']
                 },
                 {
-                    test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,
+                    test: /\.woff2?$/i,
+                    type: 'asset/resource',
+                    dependency: { not: ['url'] },
+                },
+                {
+                    test: /\.ttf?$/i,
+                    type: 'asset/resource',
+                    dependency: { not: ['url'] },
+                },
+                {
+                    test: /\.(png|jpg|jpeg|gif|svg|woff|eot)(\?.*$|$)/,
                     use: ["file-loader"]
                 }
             ]
