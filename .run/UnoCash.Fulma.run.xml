@@ -1,10 +1,11 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="UnoCash.Fulma" type="RunNativeExe" factoryName="Native Executable">
-    <option name="EXE_PATH" value="fable" />
+    <option name="EXE_PATH" value="$USER_HOME$/.dotnet/tools/fable" />
     <option name="PROGRAM_PARAMETERS" value="watch . --run webpack-dev-server" />
-    <option name="WORKING_DIRECTORY" value="UnoCash.Fable" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/UnoCash.Fable" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <envs>
+      <env name="DOTNET_ROOT" value="$USER_HOME$/.dotnet" />
       <env name="FAKE_DETAILED_ERRORS" value="true" />
     </envs>
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
