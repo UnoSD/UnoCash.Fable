@@ -182,6 +182,39 @@ let private totalsPieChart state dispatch =
                       pie.fill "#82ca9d"
                       Interop.mkPieAttr "fill" colors[(abs counter) % colors.Length] ] ] ]
 
+let private syncId = "anyId"
+
+let private simpleLineChart (data : 'a list) (xkey : string) (ykey : string) =
+    let chart =
+        Recharts.lineChart [
+            lineChart.syncId syncId
+            
+            lineChart.width  500
+            lineChart.height 300
+            lineChart.data   data
+            lineChart.margin (top = 5, right = 30, left = 20, bottom = 5)
+            
+            lineChart.children [
+                Recharts.cartesianGrid [ cartesianGrid.strokeDasharray [| 3; 3 |] ]
+                
+                Recharts.xAxis   [ xAxis.dataKey xkey ]
+                Recharts.yAxis   []
+                Recharts.tooltip []
+                Recharts.legend  []
+                Recharts.line    [ line.monotone; line.dataKey ykey; line.stroke "#ffcc00"; line.activeDot true ]
+            ]
+        ]
+    
+    Recharts.responsiveContainer [
+        responsiveContainer.width  800
+        responsiveContainer.height 600
+        
+        responsiveContainer.chart chart
+    ]
+
 let statisticsCard model dispatch =
-    card [ totalsPieChart model dispatch ]
+    card [
+        simpleLineChart model.GbpToEurData "Date" "Rate"
+        totalsPieChart model dispatch
+    ]
          Html.none
