@@ -11,6 +11,9 @@
     <None Include="paket.dependencies" />
     <None Include="paket.references" />
     <None Include="package.json" />
+    <None Include="main.scss" />
+    <None Include="index.html" />
+    <None Include="global.json" />
     
     <Compile Include="Config.fs" />
     <Compile Include="Helpers.fs" />
