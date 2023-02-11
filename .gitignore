@@ -343,3 +343,5 @@ healthchecksdb
 .ionide
 
 Pulumi.*.yaml
+
+UnoCash.Fable/output
