@@ -28,7 +28,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnoCash.Dto", "UnoCash.Dto\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnoCash.Core", "UnoCash.Core\UnoCash.Core.fsproj", "{55A73D41-DD43-4FD1-9D07-FE485DE8207A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{6FD3AAAB-28DF-40D0-91D1-A9D6305FD318}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnoCash", "UnoCash", "{6FD3AAAB-28DF-40D0-91D1-A9D6305FD318}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection

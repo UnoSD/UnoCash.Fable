@@ -105,6 +105,7 @@ Target.create "YarnInstall" (fun _ ->
 )
 
 Target.create "PublishFable" (fun _ ->
+    failwith "fable . --run webpack"
     // Get MD5 of the project, if unchanged, don't run
     Yarn.exec "webpack --mode production"
               (fun o -> { o with WorkingDirectory = "UnoCash.Fable" })
