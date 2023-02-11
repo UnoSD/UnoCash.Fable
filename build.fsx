@@ -111,6 +111,7 @@ Target.create "PublishFable" (fun _ ->
 )
 
 Target.create "WatchFable" (fun _ ->
+    failwith "fable watch . --run webpack-dev-server"
     Yarn.exec "webpack-dev-server --mode development"
               (fun o -> { o with WorkingDirectory = "UnoCash.Fable" })
 )

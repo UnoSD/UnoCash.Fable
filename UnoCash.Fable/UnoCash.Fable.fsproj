@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="webpack.config.js" />
+    <None Include="GetExpenses.json" />
+    <None Include="GetAccounts.json" />
+    <None Include="paket.dependencies" />
+    <None Include="paket.references" />
+    <None Include="package.json" />
+    
+    <Compile Include="Config.fs" />
+    <Compile Include="Helpers.fs" />
+    <Compile Include="Models.fs" />
+    <Compile Include="Messages.fs" />
+    <Compile Include="Tabs.fs" />
+    <Compile Include="Upload.fs" />
+    <Compile Include="Export.fs" />
+    <Compile Include="Updates.fs" />
+    <Compile Include="ShowExpenses.fs" />
+    <Compile Include="ExpenseForm.fs" />
+    <Compile Include="About.fs" />
+    <Compile Include="Statistics.fs" />
+    <Compile Include="SplitExpenseView.fs" />
+    <Compile Include="Settings.fs" />
+    <Compile Include="Pages.fs" />
+    <Compile Include="View.fs" />
+    <Compile Include="App.fs" />
+  </ItemGroup>
+  
+  <Import Project=".paket\Paket.Restore.targets" />
+</Project>

@@ -50,3 +50,15 @@ config:
   azure:location: West Europe
   azure-native:location: West Europe
 ```
+
+# Notes
+
+## Watch Fable project
+
+`paket install`
+`yarn install`
+`fable watch . --run webpack-dev-server`
+
+## Fix Paket TLS error
+
+`export DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0`

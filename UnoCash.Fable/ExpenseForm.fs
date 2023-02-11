@@ -142,7 +142,7 @@ let private expenseForm model dispatch =
     let uploadButton =
         File.cta []
                  [ File.icon [] [ fileUploadIcon ]
-                   File.label [] [ str "Upload a receipt..." ] ]
+                   File.Label.label [] [ str "Upload a receipt..." ] ]
                  
     let uploadFile (ev : Browser.Types.Event) =
         let reader = Browser.Dom.FileReader.Create()
@@ -165,7 +165,7 @@ let private expenseForm model dispatch =
     let receiptUpload =
         Field.div []
                   [ File.file [ File.HasName ]
-                              [ File.label [] fileLabelChildren ] ]
+                              [ File.Label.label [] fileLabelChildren ] ]
     
     form [ receiptUpload
                     
