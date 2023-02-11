@@ -31,7 +31,10 @@ module.exports = (env, options) => {
     const isProduction = options.mode === "production";
 
     return {
-        optimization: { moduleIds: 'named' },
+        optimization: {
+            moduleIds: 'named',
+            runtimeChunk: "single"
+        },
         devtool: 'inline-source-map',
         entry: isProduction ? // We don't use the same entry for dev and production, to make HMR over style quicker for dev env
             {
