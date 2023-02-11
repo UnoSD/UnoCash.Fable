@@ -53,6 +53,14 @@ config:
 
 # Notes
 
+## Compatibility
+
+Tested with
+
+* Fable 3.7.20
+* FAKE 5.23.1
+* Paket 7.2.0
+
 ## Watch Fable project
 
 `paket install`
