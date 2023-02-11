@@ -31,7 +31,7 @@ let private expenseForm model dispatch =
     let descriptionField =
         Field.div [ ]
                   [ Label.label [ ] [ str "Description" ]
-                    Control.div [ Control.IsLoading true ]
+                    Control.div [ (*Control.IsLoading true*) ]
                                 [ Textarea.textarea [ Textarea.Option.Value model.Expense.Description
                                                       Textarea.Props [ onChange ChangeDescription dispatch ] ] [] ] ]
     
