@@ -13,6 +13,7 @@ type Message =
     | ChangeDate of string
     | ShowAccountsLoaded of Account[]
     | ShowExpensesLoaded of Expense[]
+    | ExchangeRatesLoaded of CurrencyExchangeData list
     | FileSelected of string
     | FileUpload of (Blob * string * int)
     | ReceiptUploaded of string

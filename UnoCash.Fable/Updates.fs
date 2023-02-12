@@ -10,6 +10,7 @@ open UnoCash.Fulma.Upload
 open UnoCash.Fulma.Export
 open Fetch
 open Fable.Core
+open Fable.SimpleJson
 
 let private loadConfig () =
     fetch "/apibaseurl" [] |>
@@ -35,6 +36,24 @@ let private loadAccounts apiBaseUrl =
 
 let private loadAccountsCmd apiBaseUrl =
     Cmd.OfPromise.perform loadAccounts apiBaseUrl ShowAccountsLoaded
+
+let private loadExchangeRates apiBaseUrl =
+    promise {
+        let url =
+            $"{apiBaseUrl}/from=GBP&to=EUR" |>
+            getExchangeRatesUrl
+        
+        let! response =
+            fetch url [ Credentials RequestCredentials.Include ]
+        
+        let! text =
+            response.text()
+        
+        return text |> Json.parseAs<CurrencyExchangeData list>
+    }
+
+let private loadExchangeRatesCmd apiBaseUrl =
+    Cmd.OfPromise.perform loadExchangeRates apiBaseUrl ExchangeRatesLoaded
 
 let private loadExpenses (account, apiBaseUrl) =
     promise {
@@ -116,7 +135,8 @@ let private changeTabTo tab model =
     match tab with
     | ShowExpenses
     | ShowStatistics -> { model with CurrentTab = tab }, Cmd.batch [ loadExpensesCmd model.ShowAccount model.ApiBaseUrl
-                                                                     loadAccountsCmd model.ApiBaseUrl ]
+                                                                     loadAccountsCmd model.ApiBaseUrl
+                                                                     loadExchangeRatesCmd model.ApiBaseUrl ]
     | AddExpense     -> { model with ApiBaseUrl = model.ApiBaseUrl; CurrentTab = tab }, Cmd.none
     | _              -> { model with CurrentTab = tab }, Cmd.none
 
@@ -177,6 +197,8 @@ let update message model =
                                              ExpensesLoaded = true }, Cmd.none
     
     | ShowAccountsLoaded acs -> { model with Accounts = acs |> Array.map (fun a -> a.name) |> List.ofArray }, Cmd.none
+    
+    | ExchangeRatesLoaded er -> { model with GbpToEurData = er }, Cmd.none
     
     | FileSelected fileName  -> { model with SelectedFile = match fileName with
                                                             | "" | null -> Option.None

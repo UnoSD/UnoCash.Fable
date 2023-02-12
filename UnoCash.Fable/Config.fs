@@ -2,6 +2,7 @@ module UnoCash.Fulma.Config
 
 open Fable.FontAwesome
 
+let getExchangeRatesUrl = sprintf "%s/api/GetExchangeHistory"
 let getAccountsUrl = sprintf "%s/api/GetAccounts"
 let getExpensesUrl = sprintf "%s/api/GetExpenses"
 let addExpenseUrl = sprintf "%s/api/AddExpense"
