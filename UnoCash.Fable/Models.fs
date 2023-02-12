@@ -55,6 +55,7 @@ type ReceiptAnalysis =
         Status : ReceiptAnalysisStatus
     }
     
+// Duplicate in Currency.fs, share the code
 type CurrencyExchangeData =
     {
         Date : string

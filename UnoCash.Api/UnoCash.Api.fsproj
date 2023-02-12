@@ -34,6 +34,7 @@
         <Compile Include="AddExpense.fs" />
         <Compile Include="GetExpenses.fs" />
         <Compile Include="DeleteExpense.fs" />
+        <Compile Include="GetExchangeHistory.fs" />
         <Compile Include="GetReceiptUploadSasToken.fs" />
         <Compile Include="GetReceiptData.fs" />
 

@@ -18,7 +18,10 @@
       <ProjectReference Include="..\UnoCash.Dto\UnoCash.Dto.fsproj" />
         
       <None Include="schema.xhb" />
-
+      <None Include="GBP-EUR.csv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+        
       <Compile Include="Async.fs" />
       <Compile Include="String.fs" />
       <Compile Include="Option.fs" />
@@ -32,8 +35,10 @@
       <Compile Include="ExpenseTable.fs" />
       <Compile Include="ExpenseWriter.fs" />
       <Compile Include="ExpenseReader.fs" />
+      <Compile Include="ExchangeHistoryReader.fs" />
       <Compile Include="UnoCashFormField.fs" />
       <Compile Include="ReceiptParser.fs" />
+      
       <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 

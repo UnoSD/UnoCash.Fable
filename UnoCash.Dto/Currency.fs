@@ -18,16 +18,8 @@ type Currency =
         Id                 : Guid
     }
     
-// let embedded =
-//     [
-//         {
-//             Code               = "USD"
-//             Symbol             = '$'
-//             SymbolPosition     = CurrencySymbolPosition.Pre
-//             Name               = "Dollar"
-//             DecimalSeparator   = '.'
-//             ThousandsSeparator = ','
-//             DecimalDigits      = 2
-//             Id                 = Guid.Empty
-//         }        
-//     ]
+type CurrencyExchangeData =
+    {
+        Date : string
+        Rate : float
+    }
