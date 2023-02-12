@@ -252,24 +252,40 @@ let private dateSelector model dispatch =
                       [ dropdownTrigger
                         dropdownMenu ]
 
-let private isWithinTimeRange date timeRange =
-    let date = DateTime.Parse(date)
-    
-    match timeRange with
+let private isWithinTimeRange date =
+    function
     | Last365Days -> date >= DateTime.Today.AddDays(-365)
     | Last30Days  -> date >= DateTime.Today.AddDays(-30)
     | Last7Days   -> date >= DateTime.Today.AddDays(-7)
     | AllRange    -> true
 
 let statisticsCard model dispatch =
+    let dailyTotalsMap =
+        let folder (map, acc) (expense : Expense) =
+            Map.add expense.date[0..9] (acc + expense.amount) map, acc + expense.amount
+        
+        model.Expenses
+        |> Array.sortBy (fun e -> e.date)
+        |> Array.fold folder (Map.empty, 0.)
+        |> fst
+        |> Map.filter (fun date _ -> isWithinTimeRange (DateTime.Parse date) model.StatisticsSelectedTimeRange
+                                     && model.GbpToEurData |> List.exists (fun er -> er.Date = date))
+    
+    let accountDailyTotals =
+        dailyTotalsMap
+        |> Seq.map (fun kvp -> {| Date = kvp.Key; Rate = kvp.Value |})
+        |> List.ofSeq
+    
     let __ = Unchecked.defaultof<CurrencyExchangeData>
     // Remove this and send sorted from API
-    let sortedData =
+    let gbpToEurData =
         model.GbpToEurData
-        |> List.filter (fun er -> isWithinTimeRange er.Date model.StatisticsSelectedTimeRange)
+        |> List.filter (fun er -> isWithinTimeRange (DateTime.Parse er.Date) model.StatisticsSelectedTimeRange
+                                  && dailyTotalsMap |> Map.containsKey er.Date)
         |> List.sortBy (fun er -> er.Date)
     
     card [ dateSelector model dispatch
-           simpleLineChart sortedData (nameof __.Date) (nameof __.Rate) 
+           simpleLineChart gbpToEurData (nameof __.Date) (nameof __.Rate) 
+           simpleLineChart accountDailyTotals (nameof __.Date) (nameof __.Rate) 
            totalsPieChart model dispatch ]
          Html.none
