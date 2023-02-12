@@ -214,9 +214,9 @@ let private simpleLineChart (data : 'a list) (xkey : string) (ykey : string) =
         responsiveContainer.chart chart
     ]
 
-let private dateSelector =
+let private dateSelector model dispatch =
     let dropdownText =
-        span [] [ str "All range" ]
+        span [] [ model.StatisticsSelectedTimeRange |> toTimeRangeDisplayString |> str ]
     
     let dropdownIcon =
         Icon.icon [ Icon.Size IsSmall ] [ Fa.i [ Fa.Solid.AngleDown ] [] ]
@@ -227,11 +227,12 @@ let private dateSelector =
     let dropdownTrigger =
         Dropdown.trigger [] [ dropdownButton ]
     
+    let dropdownItemIsActive timeRange =
+        Dropdown.Item.IsActive (model.StatisticsSelectedTimeRange = timeRange)
+    
     let dropdownItems =
-        [ Dropdown.Item.a [] [ str "Last 7 days" ]
-          Dropdown.Item.a [] [ str "Last 30 days" ]
-          Dropdown.Item.a [] [ str "Last 365 days" ]
-          Dropdown.Item.a [ Dropdown.Item.IsActive true ] [ str "All range" ] ]
+        [ Last7Days; Last30Days; Last365Days; AllRange ]
+        |> List.map (fun tr -> Dropdown.Item.a [ dropdownItemIsActive tr ] [ tr |> toTimeRangeDisplayString |> str ])
     
     let dropdownContent =
         Dropdown.content [] dropdownItems
@@ -248,7 +249,7 @@ let statisticsCard model dispatch =
     // Remove this and send sorted from API
     let sortedData = model.GbpToEurData |> List.sortBy (fun er -> er.Date)
     
-    card [ dateSelector                                                 
+    card [ dateSelector model dispatch
            simpleLineChart sortedData (nameof __.Date) (nameof __.Rate) 
            totalsPieChart model dispatch ]
          Html.none

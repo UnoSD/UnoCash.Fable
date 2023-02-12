@@ -62,6 +62,19 @@ type CurrencyExchangeData =
         Rate : float
     }
 
+type StatisticsTimeRange =
+    | Last7Days  
+    | Last30Days 
+    | Last365Days
+    | AllRange
+    
+let toTimeRangeDisplayString timeRange =
+    match timeRange with
+    | Last7Days   -> "Last 7 days"
+    | Last30Days  -> "Last 30 days"
+    | Last365Days -> "Last 365 days"
+    | AllRange    -> "All range"
+
 type Model =
     {
         ApiBaseUrl : string
@@ -81,6 +94,7 @@ type Model =
         AccountName : string
         
         GbpToEurData : CurrencyExchangeData list
+        StatisticsSelectedTimeRange : StatisticsTimeRange
     }
     
 let emptyModel = 
@@ -101,6 +115,7 @@ let emptyModel =
         // CurrencyExchangeData : (Currency, Currency, CurrencyExchangeData)[]
         //                        Map<Currency, Map<Currency, CurrencyExchangeData>>
         GbpToEurData = []
+        StatisticsSelectedTimeRange = AllRange
         Expense =
         {
             Date = DateTime.Today
