@@ -163,7 +163,7 @@ let private addAccount apiBaseUrl name =
 
 let update message model =
     match message with
-    | SetApiBaseUrl apiHost     -> { model with ApiBaseUrl = apiHost }, Cmd.none
+    | SetApiBaseUrl apiHost  -> { model with ApiBaseUrl = apiHost }, Cmd.none
     
     | ChangeToTab newTab     -> changeTabTo newTab model
                                 
