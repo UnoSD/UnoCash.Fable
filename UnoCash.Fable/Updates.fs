@@ -57,7 +57,7 @@ let private loadExpenses (account, apiBaseUrl) =
 let private loadExpensesCmd account apiBaseUrl =
     Cmd.OfPromise.perform loadExpenses (account, apiBaseUrl) ShowExpensesLoaded
 
-let private addExpense (model, apiBaseUrl) =
+let private addExpense (model : ExpenseModel, apiBaseUrl) =
     let dateString =
         model.Date.ToString "O"
         

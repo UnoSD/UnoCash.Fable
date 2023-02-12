@@ -83,15 +83,6 @@ type Model =
         GbpToEurData : CurrencyExchangeData list
     }
     
-let private sampleGbpToEurData =
-    [ { Date = "2022/01/03"; Rate = 1.300 }
-      { Date = "2022/01/04"; Rate = 1.398 }
-      { Date = "2022/01/05"; Rate = 1.400 }
-      { Date = "2022/01/06"; Rate = 1.208 }
-      { Date = "2022/01/07"; Rate = 1.300 }
-      { Date = "2022/01/08"; Rate = 1.100 }
-      { Date = "2022/01/09"; Rate = 1.151 } ]
-    
 let emptyModel = 
     {
         ApiBaseUrl = ""
@@ -107,7 +98,9 @@ let emptyModel =
         ReceiptAnalysis = { Status = NotStarted }
         PieChartIndex = 0
         AccountName = ""
-        GbpToEurData = sampleGbpToEurData
+        // CurrencyExchangeData : (Currency, Currency, CurrencyExchangeData)[]
+        //                        Map<Currency, Map<Currency, CurrencyExchangeData>>
+        GbpToEurData = []
         Expense =
         {
             Date = DateTime.Today
