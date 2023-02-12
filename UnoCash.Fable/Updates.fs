@@ -50,7 +50,10 @@ let private loadExchangeRates apiBaseUrl =
         let! text =
             response.text()
         
-        return text |> Json.parseAs<CurrencyExchangeData list>
+        return text
+               |> SimpleJson.parse
+               |> SimpleJson.mapKeys (fun key -> $"{Char.ToUpper(key[0])}{key[1..]}")
+               |> Json.convertFromJsonAs<CurrencyExchangeData list>
     }
 
 let private loadExchangeRatesCmd apiBaseUrl =
