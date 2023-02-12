@@ -252,10 +252,22 @@ let private dateSelector model dispatch =
                       [ dropdownTrigger
                         dropdownMenu ]
 
+let private isWithinTimeRange date timeRange =
+    let date = DateTime.Parse(date)
+    
+    match timeRange with
+    | Last365Days -> date >= DateTime.Today.AddDays(-365)
+    | Last30Days  -> date >= DateTime.Today.AddDays(-30)
+    | Last7Days   -> date >= DateTime.Today.AddDays(-7)
+    | AllRange    -> true
+
 let statisticsCard model dispatch =
     let __ = Unchecked.defaultof<CurrencyExchangeData>
     // Remove this and send sorted from API
-    let sortedData = model.GbpToEurData |> List.sortBy (fun er -> er.Date)
+    let sortedData =
+        model.GbpToEurData
+        |> List.filter (fun er -> isWithinTimeRange er.Date model.StatisticsSelectedTimeRange)
+        |> List.sortBy (fun er -> er.Date)
     
     card [ dateSelector model dispatch
            simpleLineChart sortedData (nameof __.Date) (nameof __.Rate) 
