@@ -34,3 +34,5 @@ type Message =
     | AccountNameChanged of string
     | AddAccount of string
     | AccountAdded of string
+    
+    | StatisticsChangeTimeRange of StatisticsTimeRange

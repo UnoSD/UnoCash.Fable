@@ -241,3 +241,5 @@ let update message model =
     | AccountNameChanged txt -> { model with AccountName = txt }, Cmd.none
     | AddAccount name        -> model, Cmd.OfPromise.perform (addAccount model.ApiBaseUrl) name (fun _ -> AccountAdded name)
     | AccountAdded name      -> { model with Accounts = name :: model.Accounts; AccountName = "" }, Cmd.none
+    
+    | StatisticsChangeTimeRange ntr -> { model with StatisticsSelectedTimeRange = ntr }, Cmd.none

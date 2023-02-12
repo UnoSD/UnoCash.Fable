@@ -230,9 +230,17 @@ let private dateSelector model dispatch =
     let dropdownItemIsActive timeRange =
         Dropdown.Item.IsActive (model.StatisticsSelectedTimeRange = timeRange)
     
+    let dropdownItemProps timeRange =
+        Dropdown.Item.Props [ Props.OnClick (fun _ -> timeRange |> StatisticsChangeTimeRange |> dispatch) ]
+    
+    let dropdownItem timeRange =
+        [ timeRange |> toTimeRangeDisplayString |> str ]
+        |> Dropdown.Item.a [ dropdownItemIsActive timeRange
+                             dropdownItemProps timeRange ] 
+    
     let dropdownItems =
         [ Last7Days; Last30Days; Last365Days; AllRange ]
-        |> List.map (fun tr -> Dropdown.Item.a [ dropdownItemIsActive tr ] [ tr |> toTimeRangeDisplayString |> str ])
+        |> List.map dropdownItem
     
     let dropdownContent =
         Dropdown.content [] dropdownItems
