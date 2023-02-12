@@ -1,13 +1,15 @@
 module UnoCash.Fulma.Statistics
 
+open Fable.FontAwesome
 open Fable.Import
+open Fable.React
+open Fulma
 open UnoCash.Fulma.Helpers
 open UnoCash.Fulma.Models
 open UnoCash.Fulma.Messages
 open Feliz
 open Feliz.Recharts
 open System
-open Fable.React.Helpers
 
 // Rebuild financial dashboard here
 
@@ -198,10 +200,10 @@ let private simpleLineChart (data : 'a list) (xkey : string) (ykey : string) =
                 Recharts.cartesianGrid [ cartesianGrid.strokeDasharray [| 3; 3 |] ]
                 
                 Recharts.xAxis   [ xAxis.dataKey xkey ]
-                Recharts.yAxis   []
+                Recharts.yAxis   [ yAxis.domain (domain.min, domain.max); yAxis.tickCount 7  ]
                 Recharts.tooltip []
                 Recharts.legend  []
-                Recharts.line    [ line.monotone; line.dataKey ykey; line.stroke "#ffcc00"; line.activeDot true ]
+                Recharts.line    [ line.monotone; line.dataKey ykey; line.stroke "#ffcc00"; line.dot false; line.activeDot true ] // Add activeDot = { r: 8 }
             ]
         ]
     
@@ -212,11 +214,41 @@ let private simpleLineChart (data : 'a list) (xkey : string) (ykey : string) =
         responsiveContainer.chart chart
     ]
 
+let private dateSelector =
+    let dropdownText =
+        span [] [ str "All range" ]
+    
+    let dropdownIcon =
+        Icon.icon [ Icon.Size IsSmall ] [ Fa.i [ Fa.Solid.AngleDown ] [] ]
+    
+    let dropdownButton =
+        Button.button [] [ dropdownText; dropdownIcon ]
+    
+    let dropdownTrigger =
+        Dropdown.trigger [] [ dropdownButton ]
+    
+    let dropdownItems =
+        [ Dropdown.Item.a [] [ str "Last 7 days" ]
+          Dropdown.Item.a [] [ str "Last 30 days" ]
+          Dropdown.Item.a [] [ str "Last 365 days" ]
+          Dropdown.Item.a [ Dropdown.Item.IsActive true ] [ str "All range" ] ]
+    
+    let dropdownContent =
+        Dropdown.content [] dropdownItems
+    
+    let dropdownMenu =
+        Dropdown.menu [] [ dropdownContent ]
+
+    Dropdown.dropdown [ Dropdown.IsHoverable ]
+                      [ dropdownTrigger
+                        dropdownMenu ]
+
 let statisticsCard model dispatch =
     let __ = Unchecked.defaultof<CurrencyExchangeData>
+    // Remove this and send sorted from API
+    let sortedData = model.GbpToEurData |> List.sortBy (fun er -> er.Date)
     
-    card [
-        simpleLineChart model.GbpToEurData (nameof __.Date) (nameof __.Rate)
-        totalsPieChart model dispatch
-    ]
+    card [ dateSelector                                                 
+           simpleLineChart sortedData (nameof __.Date) (nameof __.Rate) 
+           totalsPieChart model dispatch ]
          Html.none
