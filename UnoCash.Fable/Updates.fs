@@ -40,8 +40,9 @@ let private loadAccountsCmd apiBaseUrl =
 let private loadExchangeRates apiBaseUrl =
     promise {
         let url =
-            $"{apiBaseUrl}/from=GBP&to=EUR" |>
-            getExchangeRatesUrl
+            apiBaseUrl |>
+            getExchangeRatesUrl |>
+            (fun url -> $"{url}?from=GBP&to=EUR")
         
         let! response =
             fetch url [ Credentials RequestCredentials.Include ]
