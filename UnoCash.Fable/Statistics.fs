@@ -213,8 +213,10 @@ let private simpleLineChart (data : 'a list) (xkey : string) (ykey : string) =
     ]
 
 let statisticsCard model dispatch =
+    let __ = Unchecked.defaultof<CurrencyExchangeData>
+    
     card [
-        simpleLineChart model.GbpToEurData "Date" "Rate"
+        simpleLineChart model.GbpToEurData (nameof __.Date) (nameof __.Rate)
         totalsPieChart model dispatch
     ]
          Html.none
