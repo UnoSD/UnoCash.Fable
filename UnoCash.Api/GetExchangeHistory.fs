@@ -53,7 +53,7 @@ let private tryParseCurrencyQueryString key query =
         Key      = key
         Value    = tryParseCurrency
         Empty    = Error $"Empty {key} currency value"
-        Missing  = Ok None
+        Missing  = Error $"Missing {key} currency"
         Multiple = Error $"Multiple {key} currency not supported" |> ignoreSnd
     } |> getQueryStringResult query
 
@@ -61,7 +61,6 @@ let private tryParseCurrencyQueryString key query =
 let run ([<HttpTrigger(AuthorizationLevel.Anonymous, "get")>]req: HttpRequest) =
     result {
         let! fromCurrency =
-            // This does not error when one or two are missing, fix
             tryParseCurrencyQueryString "from" req.Query
         and! toCurrency =
             tryParseCurrencyQueryString "to" req.Query
