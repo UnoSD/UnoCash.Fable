@@ -260,32 +260,32 @@ let private isWithinTimeRange date =
     | AllRange    -> true
 
 let statisticsCard model dispatch =
-    let dailyTotalsMap =
-        let folder (map, acc) (expense : Expense) =
-            Map.add expense.date[0..9] (acc + expense.amount) map, acc + expense.amount
-        
-        model.Expenses
-        |> Array.sortBy (fun e -> e.date)
-        |> Array.fold folder (Map.empty, 0.)
-        |> fst
-        |> Map.filter (fun date _ -> isWithinTimeRange (DateTime.Parse date) model.StatisticsSelectedTimeRange
-                                     && model.GbpToEurData |> List.exists (fun er -> er.Date = date))
-    
     let accountDailyTotals =
-        dailyTotalsMap
-        |> Seq.map (fun kvp -> {| Date = kvp.Key; Rate = kvp.Value |})
-        |> List.ofSeq
-    
+        model.Expenses
+        // We could use foldBack, but can we guarantee the API will always return in order?
+        |> Array.sortBy (fun e -> e.date)
+        //|> Array.fold (fun (acc, totals) exp -> acc + exp.amount, (exp.date[0..9], acc + exp.amount) :: totals) (0., []) |> snd |> List.rev
+        |> Array.fold (function | []                           -> fun exp -> [ exp.date[0..9], exp.amount ]
+                                // Not sure why the compiler does not identify this AND pattern and belives something is missing
+                                //| totals & (_, lastTotal) :: _ -> fun exp -> (exp.date[0..9], lastTotal + exp.amount) :: totals) []
+                                | totals                       -> fun exp -> (exp.date[0..9], totals |> List.head |> snd |> (+) exp.amount) :: totals) []
+        |> List.filter (fun (date, _) -> isWithinTimeRange (DateTime.Parse date) model.StatisticsSelectedTimeRange
+                                         && model.GbpToEurData |> List.exists (fun er -> er.Date = date))
+        |> List.groupBy fst
+        |> List.map (fun (date, amounts) -> {| Date = date; Total = amounts |> List.maxBy snd |> snd |})
+        |> List.rev
+
     let __ = Unchecked.defaultof<CurrencyExchangeData>
+    
     // Remove this and send sorted from API
     let gbpToEurData =
         model.GbpToEurData
         |> List.filter (fun er -> isWithinTimeRange (DateTime.Parse er.Date) model.StatisticsSelectedTimeRange
-                                  && dailyTotalsMap |> Map.containsKey er.Date)
+                                  && accountDailyTotals |> List.exists (fun dt -> dt.Date = er.Date))
         |> List.sortBy (fun er -> er.Date)
     
     card [ dateSelector model dispatch
            simpleLineChart gbpToEurData (nameof __.Date) (nameof __.Rate) 
-           simpleLineChart accountDailyTotals (nameof __.Date) (nameof __.Rate) 
+           simpleLineChart accountDailyTotals  (nameof __.Date) (nameof accountDailyTotals.Head.Total) 
            totalsPieChart model dispatch ]
          Html.none
