@@ -1,1 +1,1 @@
-bootstrap: dotnet tool install --global Paket
+bootstrap: dotnet tool install --global Paket && export PATH="$PATH:/root/.dotnet/tools"
