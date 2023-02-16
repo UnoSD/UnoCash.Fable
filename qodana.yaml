@@ -1,1 +1,1 @@
-boostrap: dotnet new tool-manifest && dotnet tool install paket
+bootstrap: dotnet new tool-manifest && dotnet tool install paket
